@@ -1,0 +1,49 @@
+{
+  name: 'compendium-search',
+  version: '1.0.0',
+  description: 'A fast and lightweight compendium browser for FoundryVTT',
+  author: 'DenWav',
+  license: 'AGPL-3.0-only',
+  keywords: [
+    'foundry',
+    'foundry-vtt',
+  ],
+  scripts: {
+    clean: 'gulp clean',
+    build: 'gulp build',
+    fix: 'gts fix',
+    update: 'gulp update',
+  },
+  repository: {
+    type: 'git',
+    url: 'https://github.com/DenWav/compendium-search',
+  },
+  bugs: {
+    url: 'https://github.com/DenWav/compendium-search/issues',
+  },
+  devDependencies: {
+    // branch v12/main
+    '@league-of-foundry-developers/foundry-vtt-types': 'github:League-of-Foundry-Developers/foundry-vtt-types#de9af72',
+    '@types/gulp': '4.0.17',
+    '@types/node': '20.14.9',
+    '@types/youtube': '0.0.50',
+    del: '6.1.1',
+    gts: '5.3.1',
+    gulp: '5.0.0',
+    'gulp-sourcemaps': '3.0.0',
+    'gulp-typescript': '5.0.1',
+    'merge-stream': '2.0.0',
+    typescript: '5.5.3',
+  },
+  // Fix some deprecation warnings
+  pnpm: {
+    overrides: {
+      '@humanwhocodes/config-array': 'npm:@eslint/config-array@0.17.0',
+      '@humanwhocodes/object-schema': 'npm:@eslint/object-schema@2.1.4',
+      glob: '10.4.2',
+      rimraf: '4.4.1',
+      '@typescript-eslint/typescript-estree': '7.15.0',
+      css: 'npm:@adobe/css-tools@4.4.0',
+    },
+  },
+}

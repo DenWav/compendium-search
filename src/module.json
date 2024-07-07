@@ -1,0 +1,29 @@
+{
+  "id": "compendium-search",
+  "title": "Compendium Search",
+  "description": "A fast and lightweight compendium browser.",
+  "authors": [
+    {
+      "name": "DenWav"
+    }
+  ],
+  "version": "1.0.0",
+  "compatibility": {
+    "minimum": 11
+  },
+  "esmodules": ["scripts/index.js"],
+  "styles": ["styles/compendium-search.css"],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
+  "license": "license.txt",
+  "readme": "readme.md",
+  "bugs": "https://github.com/DenWav/compendium-search/issues",
+  "flags": {
+    "hotReload": true
+  }
+}
