@@ -9,10 +9,10 @@
     'foundry-vtt',
   ],
   scripts: {
-    clean: 'gulp clean',
-    build: 'gulp build',
+    clean: 'rimraf dist/ foundryData/Data/modules/compendium-search',
+    build: 'pnpm run clean && tsc && cpy --cwd=./src "./**" ../dist/',
+    update: 'pnpm run build && cpy --cwd=./dist "./**" ../foundryData/Data/modules/compendium-search/',
     fix: 'gts fix',
-    update: 'gulp update',
   },
   repository: {
     type: 'git',
@@ -21,18 +21,15 @@
   bugs: {
     url: 'https://github.com/DenWav/compendium-search/issues',
   },
+  dependencies: {
+    flexsearch: '0.7.43',
+  },
   devDependencies: {
     // branch v12/main
-    '@league-of-foundry-developers/foundry-vtt-types': 'github:League-of-Foundry-Developers/foundry-vtt-types#de9af72',
-    '@types/gulp': '4.0.17',
-    '@types/node': '20.14.9',
-    '@types/youtube': '0.0.50',
-    del: '6.1.1',
+    '@league-of-foundry-developers/foundry-vtt-types': 'github:League-of-Foundry-Developers/foundry-vtt-types#ba7a9ca',
+    'cpy-cli': '^5.0.0',
     gts: '5.3.1',
-    gulp: '5.0.0',
-    'gulp-sourcemaps': '3.0.0',
-    'gulp-typescript': '5.0.1',
-    'merge-stream': '2.0.0',
+    rimraf: '4.4.1',
     typescript: '5.5.3',
   },
   // Fix some deprecation warnings
@@ -40,10 +37,10 @@
     overrides: {
       '@humanwhocodes/config-array': 'npm:@eslint/config-array@0.17.0',
       '@humanwhocodes/object-schema': 'npm:@eslint/object-schema@2.1.4',
-      glob: '10.4.2',
+      glob: '9.3.5',
       rimraf: '4.4.1',
-      '@typescript-eslint/typescript-estree': '7.15.0',
-      css: 'npm:@adobe/css-tools@4.4.0',
+      '@typescript-eslint/eslint-plugin': '7.15.0',
+      '@typescript-eslint/parser': '7.15.0',
     },
   },
 }

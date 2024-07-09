@@ -5,9 +5,8 @@
     ],
     "target": "ES2022",
     "module": "ES2022",
-    "moduleResolution": "Bundler",
+    "moduleResolution": "node",
     "sourceMap": true,
-    "inlineSources": true,
     "removeComments": false,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
@@ -26,13 +25,14 @@
     "noImplicitOverride": true,
     "allowUnreachableCode": false,
     "pretty": true,
-    "sourceRoot": "./src",
+    "sourceRoot": "./",
+    "outDir": "./dist/scripts",
     "skipLibCheck": true
   },
   "exclude": [
     "node_modules",
     "dist",
-    "foundry",
-    "foundryData"
+    "foundry*",
+    "foundryData*",
   ]
 }

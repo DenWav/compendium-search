@@ -2,9 +2,8 @@
   margin-top: 5px;
 }
 
-#compendium-search-app-content {
+#compendium-search-enabled-compendiums-app-content {
   overflow-y: scroll;
-  /*max-width: 50%;*/
 
   ul {
     padding: 0;
@@ -28,9 +27,28 @@
   }
 }
 
-.compendium-search-submit-btn {
+.enabled-compendiums-submit-btn {
   position: fixed;
   width: 12em;
   bottom: 0.75em;
   right: 0.75em;
+}
+
+#compendium-search-app-content {
+  display: inline-flex;
+}
+
+.compendium-search-filter {
+  width: 45%;
+  border-right: 1px solid color-mix(in srgb, var(--color-border-light-primary), 50% transparent);
+}
+
+.compendium-search-box {
+  display: inline-block;
+  margin-right: 2em;
+  width: calc(100% - 2em);
+}
+
+.compendium-search-results {
+  margin-left: 2em;
 }
