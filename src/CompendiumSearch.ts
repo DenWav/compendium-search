@@ -3,7 +3,7 @@ import type {
   ApplicationRenderContext,
 } from '@league-of-foundry-developers/foundry-vtt-types/src/foundry/client-esm/applications/_types.mjs';
 import type {DeepPartial} from '@league-of-foundry-developers/foundry-vtt-types/src/types/utils.mjs';
-import {CompendiumIndex} from './CompendiumIndex.js';
+import {CompendiumIndex} from './CompendiumIndex';
 
 const {ApplicationV2, HandlebarsApplicationMixin} = foundry.applications.api;
 

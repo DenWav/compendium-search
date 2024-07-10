@@ -2,6 +2,8 @@
   name: 'compendium-search',
   version: '1.0.0',
   description: 'A fast and lightweight compendium browser for FoundryVTT',
+  main: 'dist/index.js',
+  type: 'module',
   author: 'DenWav',
   license: 'AGPL-3.0-only',
   keywords: [
@@ -9,8 +11,8 @@
     'foundry-vtt',
   ],
   scripts: {
-    clean: 'rimraf dist/ foundryData/Data/modules/compendium-search',
-    build: 'pnpm run clean && tsc && cpy --cwd=./src "./**" ../dist/',
+    clean: 'gulp clean',
+    build: 'gulp build',
     update: 'pnpm run build && cpy --cwd=./dist "./**" ../foundryData/Data/modules/compendium-search/',
     fix: 'gts fix',
   },
@@ -27,8 +29,10 @@
   devDependencies: {
     // branch v12/main
     '@league-of-foundry-developers/foundry-vtt-types': 'github:League-of-Foundry-Developers/foundry-vtt-types#ba7a9ca',
-    'cpy-cli': '^5.0.0',
     gts: '5.3.1',
+    gulp: '^5.0.0',
+    'gulp-sourcemaps': '^3.0.0',
+    'gulp-typescript': '6.0.0-alpha.1',
     rimraf: '4.4.1',
     typescript: '5.5.3',
   },
@@ -41,6 +45,7 @@
       rimraf: '4.4.1',
       '@typescript-eslint/eslint-plugin': '7.15.0',
       '@typescript-eslint/parser': '7.15.0',
+      css: 'npm:@adobe/css-tools@4.4.0',
     },
   },
 }

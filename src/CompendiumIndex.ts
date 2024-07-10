@@ -4,10 +4,9 @@ export class CompendiumIndex {
   static #instance: CompendiumIndex | null | undefined;
 
   // @ts-expect-error
-  #indices:
+  #indices?:
     | IndexTypeForMetadata<CompendiumCollection.Metadata>[]
-    | null
-    | undefined;
+    | null;
 
   static get(): CompendiumIndex {
     if (CompendiumIndex.#instance) {

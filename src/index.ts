@@ -1,5 +1,5 @@
-import {EnabledCompendiumsSettings} from './EnabledCompendiumsSettings.js';
-import {CompendiumSearch} from './CompendiumSearch.js';
+import {EnabledCompendiumsSettings} from './EnabledCompendiumsSettings';
+import {CompendiumSearch} from './CompendiumSearch';
 
 Hooks.on('ready', () => {
   if (!game.settings) {
