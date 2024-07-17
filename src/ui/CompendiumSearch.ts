@@ -3,15 +3,13 @@ import type {
   ApplicationRenderContext,
   ApplicationRenderOptions,
 } from "@foundry/client-esm/applications/_types.mjs";
-import type {DeepPartial} from "@foundry/types/utils.mjs";
-import {CompendiumIndex} from "../CompendiumIndex.js";
-import {SearchDefinition, TabDefinition} from "../SearchDefinition.js";
-import type {
-  HandlebarsApplicationMixin as HandlebarsApplication
-} from "@foundry/client-esm/applications/api/_module.mjs";
+import type { DeepPartial } from "@foundry/types/utils.mjs";
+import { CompendiumIndex } from "../CompendiumIndex.js";
+import { SearchDefinition, TabDefinition } from "../SearchDefinition.js";
+import type { HandlebarsApplicationMixin as HandlebarsApplication } from "@foundry/client-esm/applications/api/_module.mjs";
 import type { DocumentSearchOptions } from "flexsearch";
 
-const {ApplicationV2, HandlebarsApplicationMixin} = foundry.applications.api;
+const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) {
   // noinspection JSUnusedGlobalSymbols
@@ -44,12 +42,12 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
       };
     });
     return parts;
-  };
+  }
 
   // noinspection JSUnusedGlobalSymbols
   override tabGroups: Record<string, string> = {
     search: "search-0", // first tab
-  }
+  };
 
   constructor(options: DeepPartial<ApplicationConfiguration> = {}) {
     super(options);
@@ -99,12 +97,14 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
 
   #configureInputs() {
     document.querySelectorAll(".compendium-search-filter").forEach(filterElement => {
-      filterElement.querySelectorAll<HTMLInputElement>("input:not([type=button])").forEach(input => {
-        input.oninput = (event) => {
-          event.preventDefault();
-          this.performSearch(event.currentTarget as HTMLElement);
-        }
-      });
+      filterElement
+        .querySelectorAll<HTMLInputElement>("input:not([type=button])")
+        .forEach(input => {
+          input.oninput = event => {
+            event.preventDefault();
+            this.performSearch(event.currentTarget as HTMLElement);
+          };
+        });
     });
   }
 
@@ -123,23 +123,61 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
     }
     const searchTabConfig = SearchDefinition.get.tabs[tabNum];
 
-    const index = CompendiumIndex.get.indexFor(searchTabConfig)
+    const index = CompendiumIndex.get.indexFor(searchTabConfig);
     if (!index) {
       return;
     }
 
-    const searchObject = this.#createSearchObject(searchTabConfig, parentTab);
-
-    index.searchAsync();
+    // const searchObject = this.#createSearchObject(searchTabConfig, parentTab);
+    // index.searchAsync();
   }
 
-  #createSearchObject(tab: TabDefinition, filterElement: HTMLElement): Partial<DocumentSearchOptions<false>>[] {
+  // @ts-expect-error
+  #createSearchObject(
+    tab: TabDefinition,
+    filterElement: HTMLElement
+  ): Partial<DocumentSearchOptions<false>>[] {
     const res: Partial<DocumentSearchOptions<false>>[] = [];
 
     for (const key of Object.keys(tab.schema)) {
-      const inputs = Array.from(filterElement.querySelectorAll<HTMLInputElement>(`input[data-cs-field="${key}"]`).values());
+      const inputs = Array.from(
+        filterElement.querySelectorAll<HTMLInputElement>(`input[data-cs-field="${key}"]`).values()
+      );
 
-      
+      const field = tab.schema[key];
+      switch (field.kind) {
+        case "searchable":
+          if (inputs.length !== 1) {
+            throw Error(
+              `Incorrect number of inputs for searchable field: ${field.title}: ${inputs.length}`
+            );
+          }
+          break;
+        case "selectable":
+          if (field.type === "boolean" && inputs.length !== 1) {
+            const msg = `Incorrect number of inputs for boolean field: ${field.title}: ${inputs.length}`;
+            throw Error(msg);
+          } else if (
+            (field.type === "string" || field.type === "number") &&
+            Object.keys(field.options).length !== inputs.length
+          ) {
+            const msg =
+              `Incorrect number of inputs for selectable field: ${field.title}: ` +
+              `${inputs.length} (expected ${Object.keys(field.options).length})`;
+            throw Error(msg);
+          }
+          break;
+        case "range":
+          // sanity check
+          if (field.type !== "number") {
+            // @ts-expect-error
+            throw Error(`Invalid type for range field: ${field.title}: ${field.type}`);
+          }
+          break;
+        default:
+          // @ts-expect-error
+          throw Error(`Invalid field kind: ${field.kind}`);
+      }
     }
 
     return res;
@@ -153,7 +191,7 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
       }
 
       const inputs: NodeListOf<HTMLInputElement> = wrap.querySelectorAll("input[type=range]");
-      if (inputs.length != 2) {
+      if (inputs.length !== 2) {
         return;
       }
       const first = inputs.item(0);
@@ -163,7 +201,6 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
       this.#configureBubble(shadow, first, second);
       this.#configureBubble(shadow, second, first);
     });
-
   }
 
   #configureBubble(shadow: HTMLDivElement, range: HTMLInputElement, otherRange: HTMLInputElement) {

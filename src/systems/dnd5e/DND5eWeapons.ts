@@ -1,5 +1,5 @@
-import {CompendiumDoc, SearchDefinition} from "../../SearchDefinition.js";
-import {exists} from "../../util.js";
+import { CompendiumDoc, SearchDefinition } from "../../SearchDefinition.js";
+import { exists } from "../../util.js";
 
 export function registerWeapons() {
   SearchDefinition.get.registerSearchTab({
@@ -73,7 +73,16 @@ interface ItemTypeData {
   value: string;
 }
 
-const WeaponTypes = new Set(["simpleM", "simpleR", "martialM", "martialR", "rod", "wand", "ammo", "shield"]);
+const WeaponTypes = new Set([
+  "simpleM",
+  "simpleR",
+  "martialM",
+  "martialR",
+  "rod",
+  "wand",
+  "ammo",
+  "shield",
+]);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function isWeapon(value: any): value is Item5e {

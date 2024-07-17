@@ -65,7 +65,7 @@ export interface TabDefinition<
   title: string;
   icon: string;
   type: foundry.CONST.COMPENDIUM_DOCUMENT_TYPES;
-  resultTemplate: string,
+  resultTemplate: string;
 
   schema: Schema;
 
