@@ -34,7 +34,7 @@
             <ul>
               {{#each options}}
                 <li>
-                  <input type="checkbox" id="compendium-search-input-{{@key}}" checked />
+                  <input type="checkbox" id="compendium-search-input-{{@key}}" data-cs-field="{{@../key}}" data-cs-select="{{@key}}" checked />
                   <label for="compendium-search-input-{{@key}}">{{this}}</label>
                 </li>
               {{/each}}

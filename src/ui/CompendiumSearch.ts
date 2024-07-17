@@ -5,7 +5,11 @@ import type {
 } from "@foundry/client-esm/applications/_types.mjs";
 import type { DeepPartial } from "@foundry/types/utils.mjs";
 import { CompendiumIndex } from "../CompendiumIndex.js";
-import { SearchDefinition, TabDefinition } from "../SearchDefinition.js";
+import {
+  RangeNumberFieldDescriptor,
+  SearchDefinition,
+  TabDefinition,
+} from "../SearchDefinition.js";
 import type { HandlebarsApplicationMixin as HandlebarsApplication } from "@foundry/client-esm/applications/api/_module.mjs";
 import type { DocumentSearchOptions } from "flexsearch";
 
@@ -63,7 +67,7 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
       context.tabs = this.#getTabs();
     } else if (partId.startsWith("search")) {
       context.tab = context.tabs[partId];
-      context.search = SearchDefinition.get.tabs[parseInt(partId.slice(7))];
+      context.search = SearchDefinition.get.tabs[parseInt(partId.slice(7), 10)];
     }
 
     return context;
@@ -117,7 +121,7 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
     if (!id || !id.startsWith("search-")) {
       return;
     }
-    const tabNum = parseInt(id.slice(7));
+    const tabNum = parseInt(id.slice(7), 10);
     if (tabNum >= SearchDefinition.get.tabs.length) {
       return;
     }
@@ -146,13 +150,15 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
 
       const field = tab.schema[key];
       switch (field.kind) {
-        case "searchable":
+        case "searchable": {
           if (inputs.length !== 1) {
             const msg = `Incorrect number of inputs for searchable field: ${field.title}: ${inputs.length}`;
             throw Error(msg);
           }
+
           break;
-        case "selectable":
+        }
+        case "selectable": {
           if (field.type === "boolean" && inputs.length !== 1) {
             const msg = `Incorrect number of inputs for boolean field: ${field.title}: ${inputs.length}`;
             throw Error(msg);
@@ -165,14 +171,30 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
               `${inputs.length} (expected ${Object.keys(field.options).length})`;
             throw Error(msg);
           }
+
+          // @ts-expect-error
+          const selectedOptions = inputs.map(i => i.dataset.csSelect).filter(v => v !== undefined);
+
           break;
-        case "range":
+        }
+        case "range": {
           // sanity check
           if (field.type !== "number") {
             // @ts-expect-error
             throw Error(`Invalid type for range field: ${field.title}: ${field.type}`);
+          } else if (inputs.length !== 2) {
+            const msg = `Incorrect number of inputs for range field: ${field.title}: ${inputs.length}`;
+            throw Error(msg);
           }
+
+          const [firstValue, secondValue] = inputs.map(i => parseInt(i.value, 10));
+          const minValue = Math.max(field.min, Math.min(firstValue, secondValue));
+          const maxValue = Math.min(field.max, Math.max(firstValue, secondValue));
+
+          // eslint-disable-next-line no-empty
+          for (let i = minValue; i <= maxValue; i += field.step) {}
           break;
+        }
         default:
           // @ts-expect-error
           throw Error(`Invalid field kind: ${field.kind}`);
