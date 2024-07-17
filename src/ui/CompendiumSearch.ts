@@ -148,9 +148,8 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
       switch (field.kind) {
         case "searchable":
           if (inputs.length !== 1) {
-            throw Error(
-              `Incorrect number of inputs for searchable field: ${field.title}: ${inputs.length}`
-            );
+            const msg = `Incorrect number of inputs for searchable field: ${field.title}: ${inputs.length}`;
+            throw Error(msg);
           }
           break;
         case "selectable":
