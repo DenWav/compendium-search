@@ -11,7 +11,7 @@
   "compatibility": {
     "minimum": 11
   },
-  "esmodules": ["scripts/index.js"],
+  "esmodules": ["index.mjs"],
   "styles": ["styles/compendium-search.css"],
   "languages": [
     {

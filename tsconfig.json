@@ -1,8 +1,13 @@
 {
   "compilerOptions": {
-    "types": [
-      "@league-of-foundry-developers/foundry-vtt-types"
-    ],
+    "types": ["@league-of-foundry-developers/foundry-vtt-types"],
+    "baseUrl": ".",
+    "paths": {
+      "@foundry/*": [
+        "node_modules/@league-of-foundry-developers/foundry-vtt-types/src/*",
+        "node_modules/@league-of-foundry-developers/foundry-vtt-types/src/foundry/*"
+      ]
+    },
     "target": "ES2022",
     "module": "ES2022",
     "moduleResolution": "node",
@@ -29,10 +34,5 @@
     "outDir": "./dist/scripts",
     "skipLibCheck": true
   },
-  "exclude": [
-    "node_modules",
-    "dist",
-    "foundry*",
-    "foundryData*",
-  ]
+  "exclude": ["**/.vite", "node_modules", "dist"]
 }

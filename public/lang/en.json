@@ -1,3 +1,60 @@
 {
-  "CS.title": "Compendium Search"
+  "CS": {
+    "title": "Compendium Search",
+
+    "dnd5e": {
+      "monster": {
+        "title": "Monsters",
+        "name": "Name",
+        "bio": "Biography",
+        "type": {
+          "title": "Type",
+          "aberration": "Aberration",
+          "beast": "Beast",
+          "celestial": "Celestial",
+          "construct": "Construct",
+          "dragon": "Dragon",
+          "elemental": "Elemental",
+          "fey": "Fey",
+          "fiend": "Fiend",
+          "giant": "Giant",
+          "humanoid": "Humanoid",
+          "monstrosity": "Monstrosity",
+          "ooze": "Ooze",
+          "plant": "Plant",
+          "undead": "Undead"
+        },
+        "cr": "Challenge Rating"
+      },
+      "armor": {
+        "title": "Armor",
+        "name": "Name",
+        "description": "Description",
+        "type": {
+          "title": "Type",
+          "light": "Light Armor",
+          "medium": "Medium Armor",
+          "heavy": "Heavy Armor",
+          "shield": "Shield"
+        },
+        "ac": "Armor Class"
+      },
+      "weapon": {
+        "title": "Weapons",
+        "name": "Name",
+        "description": "Description",
+        "type": {
+          "title": "Type",
+          "simpleM": "Simple Melee",
+          "simpleR": "Simple Ranged",
+          "martialM": "Martial Melee",
+          "martialR": "Martial Ranged",
+          "rod": "Rod",
+          "wand": "Wand",
+          "ammo": "Ammunition",
+          "shield": "Shield"
+        }
+      }
+    }
+  }
 }

@@ -1,0 +1,186 @@
+@import 'double-range-input.css';
+
+.compendium-search-btn {
+  margin-top: 5px;
+}
+
+#compendium-search-enabled-compendiums-app-content {
+  overflow-y: scroll;
+
+  ul {
+    padding: 0;
+    margin: 0;
+    list-style-type: none;
+  }
+
+  li {
+    padding-top: 0.3em;
+    padding-bottom: 0.3em;
+
+    ul {
+      padding-left: 1em;
+      padding-right: 1em;
+    }
+  }
+
+  label {
+    font-size: 110%;
+    text-shadow: 0 0 3px var(--color-shadow-dark);
+  }
+}
+
+.enabled-compendiums-submit-btn {
+  position: fixed;
+  width: 12em;
+  bottom: 0.75em;
+  right: 0.75em;
+}
+
+.cs-tab {
+  /* 2.7em refers to the height of the nav bar */
+  height: calc(100% - 2.7em);
+}
+
+#compendium-search-app {
+  .window-content {
+    padding: 0;
+    margin: 1rem;
+  }
+}
+
+.compendium-search-app-content {
+  display: grid;
+  grid-auto-flow: row;
+  grid-template-columns: 2fr 3fr;
+  height: 100%;
+}
+
+.compendium-search-filter {
+  grid-column-start: 1;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+  border-right: 1px solid
+    color-mix(in srgb, var(--color-border-light-primary), 50% transparent);
+
+  margin-top: 20px;
+
+  ul {
+    padding: 0;
+    margin: 0;
+    list-style-type: none;
+  }
+
+  h2 {
+    font-size: 1.5em;
+  }
+}
+
+.compendium-search-container {
+  display: grid;
+  grid-template-columns: 1fr 5fr;
+  gap: 0.5em;
+  padding: 0.5em 1em 0.5em 0;
+
+  label {
+    padding-top: 0.5em;
+  }
+}
+
+.compendium-search-selection {
+  margin-top: 20px;
+
+  summary {
+    h2 {
+      display: inline-block;
+      position: relative;
+      top: -0.8em;
+      width: calc(100% + 12px);
+      overflow: visible;
+      margin-bottom: 0;
+
+      &:before {
+        content: '';
+        display: inline-block;
+        width: 14px;
+      }
+    }
+  }
+}
+
+.compendium-search-range {
+  margin-top: 20px;
+  height: 120px;
+}
+
+.compendium-search-sort-container {
+  display: flex;
+
+  flex-direction: row;
+  justify-content: flex-end;
+  gap: 1.5em;
+
+  label {
+    position: relative;
+    min-width: 4em;
+    font-size: 1.2em;
+    padding-top: 0.5em;
+    text-align: right;
+    width: fit-content;
+  }
+}
+
+.compendium-search-results {
+  margin-left: 2em;
+  grid-column-start: 2;
+}
+
+.compendium-search-tabs {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  font-size: 1.2em;
+}
+
+#compendium-search-loading {
+  display: none;
+  & > * {
+    grid-column-start: 1;
+    grid-row-start: 1;
+  }
+  margin-top: 1.5em;
+  width: 100%;
+  height: 16px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 2px solid var(--color-border-dark);
+  box-shadow: 0 0 4px var(--color-border-light-primary);
+  border-radius: 4px;
+  z-index: calc(var(--z-index-canvas) + 1);
+
+  label {
+    position: relative;
+    top: -2px;
+    font-size: var(--font-size-18);
+    line-height: 16px;
+    margin: 0 5px;
+    padding: 0 5px;
+    width: fit-content;
+    color: var(--color-text-light-0);
+    background: rgba(0, 0, 0, 0.6);
+    text-shadow: 1px 1px 6px var(--color-text-light-0);
+    z-index: calc(var(--z-index-canvas) + 2);
+  }
+}
+
+.compendium-search-loading-bar {
+  width: 100%;
+  position: relative;
+  margin: 1px;
+  height: 10px;
+  background: var(--color-level-info);
+  border: 1px solid var(--color-border-light-primary);
+  border-radius: 2px;
+}
+
+.compendium-search-loading-progress {
+    justify-self: end;
+}

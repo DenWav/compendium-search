@@ -1,28 +1,28 @@
-import type {DeepPartial} from '@league-of-foundry-developers/foundry-vtt-types/src/types/utils.mjs';
+import type { DeepPartial } from "@league-of-foundry-developers/foundry-vtt-types/src/types/utils.mjs";
 import type {
   ApplicationConfiguration,
   ApplicationRenderContext,
   ApplicationRenderOptions,
-} from '@league-of-foundry-developers/foundry-vtt-types/src/foundry/client-esm/applications/_types.mjs';
+} from "@foundry/client-esm/applications/_types.mjs";
+import { createElement } from "../util";
 
-const {ApplicationV2, HandlebarsApplicationMixin} = foundry.applications.api;
+const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
-export class EnabledCompendiumsSettings extends HandlebarsApplicationMixin(
-  ApplicationV2
-) {
+export class EnabledCompendiumsSettings extends HandlebarsApplicationMixin(ApplicationV2) {
   data: string[];
   tree: CompendiumTree | null;
 
+  // noinspection JSUnusedGlobalSymbols
   static override DEFAULT_OPTIONS = {
-    id: 'compendium-search-enabled-compendiums-app',
-    tag: 'form',
+    id: "compendium-search-enabled-compendiums-app",
+    tag: "form",
     form: {
       handler: EnabledCompendiumsSettings.formHandler,
       submitOnChange: false,
       closeOnSubmit: true,
     },
     window: {
-      title: 'Compendium Search - Enabled Compendiums',
+      title: "Compendium Search - Enabled Compendiums",
       resizable: true,
     },
     position: {
@@ -31,35 +31,36 @@ export class EnabledCompendiumsSettings extends HandlebarsApplicationMixin(
     },
   };
 
+  // noinspection JSUnusedGlobalSymbols
   static override PARTS = {
     settings: {
-      template: 'modules/compendium-search/template/enabled-compendiums.hbs',
+      template: "modules/compendium-search/template/enabled-compendiums.hbs",
     },
   };
 
   constructor(options: DeepPartial<ApplicationConfiguration>) {
     super(options);
     if (game.settings && game.packs) {
-      this.data = game.settings.get(
-        'compendium-search',
-        'enabled-compendiums'
-      ) as string[];
-      // @ts-expect-error
-      this.tree = game.packs?.tree;
+      this.data = game.settings.get("compendium-search", "enabled-compendiums") as string[];
+      this.tree = (game.packs as CompendiumPacks).tree;
     } else {
       this.data = [];
       this.tree = null;
     }
   }
 
+  // noinspection JSUnusedGlobalSymbols
   protected override _onRender(
     context: DeepPartial<ApplicationRenderContext>,
     options: DeepPartial<ApplicationRenderOptions>
   ) {
     super._onRender(context, options);
 
-    const app = $('#compendium-search-enabled-compendiums-app-content');
-    const list = $('<ul></ul>');
+    const app = document.getElementById("compendium-search-enabled-compendiums-app-content");
+    if (!app) {
+      return;
+    }
+    const list = document.createElement("ul");
 
     if (this.tree) {
       this.buildList([], list, this.tree);
@@ -78,59 +79,51 @@ export class EnabledCompendiumsSettings extends HandlebarsApplicationMixin(
 
     const result: string[] = [];
 
-    const elements = form.getElementsByTagName('input');
+    const elements = form.getElementsByTagName("input");
     for (const element of elements) {
       if (element.checked && element.dataset.compendiumId) {
         result.push(element.dataset.compendiumId);
       }
     }
 
-    await game.settings.set('compendium-search', 'enabled-compendiums', result);
+    await game.settings.set("compendium-search", "enabled-compendiums", result);
   }
 
-  private buildList(
-    depth: number[],
-    list: JQuery<HTMLElement>,
-    current: CompendiumTree
-  ) {
+  private buildList(depth: number[], list: HTMLUListElement, current: CompendiumTree) {
     let count = 0;
     for (const childTree of current.children) {
-      const childList = $('<ul></ul>');
+      const childList = document.createElement("ul");
       this.buildList([...depth, count], childList, childTree);
 
-      let listItem: JQuery<HTMLElement>;
+      let listItem: HTMLElement;
       if (childTree.folder) {
         // @ts-expect-error
         const cssColor = childTree.folder.color.toRGBA(0.85);
-        listItem = $(`<li style="background-color: ${cssColor};"></li>`);
+        listItem = createElement(`<li style="background-color: ${cssColor};"></li>`);
 
         const folderId = this.computeId([...depth, count]);
-        const folderItem: JQuery<HTMLInputElement> = $(
-          `<input type="checkbox" id="${folderId}" />`
-        );
-        folderItem.on('change', event => {
-          const isChecked = event.currentTarget.checked;
-          childList.find('input').each((_, elem) => {
+        const folderItem = createElement(`<input type="checkbox" id="${folderId}" />`);
+        folderItem.onchange = () => {
+          const isChecked = folderItem.checked;
+          childList.querySelectorAll("input").forEach(elem => {
             elem.checked = isChecked;
           });
 
           if (!isChecked) {
             this.uncheckParents(depth);
           }
-        });
+        };
 
-        const childInputs = Array.from(childList.find('input'));
+        const childInputs = Array.from(childList.getElementsByTagName("input"));
         const isAllChecked = childInputs.every(elem => elem.checked);
         if (childInputs.length > 0 && isAllChecked) {
-          (folderItem[0] as HTMLInputElement).checked = true;
+          folderItem.checked = true;
         }
 
         listItem.append(folderItem);
-        listItem.append(
-          `<label for="${folderId}">${childTree.folder.name}</label>`
-        );
+        listItem.append(createElement(`<label for="${folderId}">${childTree.folder.name}</label>`));
       } else {
-        listItem = $('<li></li>');
+        listItem = document.createElement("li");
       }
 
       listItem.append(childList);
@@ -143,20 +136,20 @@ export class EnabledCompendiumsSettings extends HandlebarsApplicationMixin(
       const label = entry.metadata.label;
       const entryId = this.computeId([...depth, count]);
 
-      const listElement = $('<li></li>');
-      const entryItem = $(
+      const listElement = document.createElement("li");
+      const entryItem = createElement(
         `<input type="checkbox" id="${entryId}" data-compendium-id="${entry.metadata.id}" />`
       );
-      entryItem.on('change', () => {
+      entryItem.onchange = () => {
         this.uncheckParents(depth);
-      });
+      };
 
       listElement.append(entryItem);
-      listElement.append(`<label for="${entryId}">${label}</label>`);
+      listElement.append(createElement(`<label for="${entryId}">${label}</label>`));
       list.append(listElement);
 
       if (this.data.includes(entry.metadata.id)) {
-        (entryItem[0] as HTMLInputElement).checked = true;
+        entryItem.checked = true;
       }
 
       count++;
@@ -171,7 +164,7 @@ export class EnabledCompendiumsSettings extends HandlebarsApplicationMixin(
   }
 
   private computeId(depth: number[]): string {
-    let id = 'cs-comp-select';
+    let id = "cs-comp-select";
     for (const d of depth) {
       id += `-${d}`;
     }

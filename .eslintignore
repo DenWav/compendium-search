@@ -1,4 +1,3 @@
+**/.vite/
 dist/
 node_modules/
-foundry*
-foundryData*

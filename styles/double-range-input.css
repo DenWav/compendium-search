@@ -1,0 +1,124 @@
+/* Double ended range input */
+.cs-range-container {
+  --ticksThickness: 1px;
+  --ticksHeight: 30%;
+  --ticksColor: var(--color-light-4);
+
+  display: grid;
+
+  /* Tick marks */
+  background: var(--color-light-4);
+  background: linear-gradient(to right, var(--ticksColor) var(--ticksThickness), transparent 1px) repeat-x;
+  background-size: calc((100% - 14px) / ((var(--max) - var(--min)) / var(--step))) var(--ticksHeight);
+  background-position: 6px bottom;
+  position: relative;
+
+  width: 90%;
+  left: 10px;
+  margin-top: 3.4em;
+
+  & > input[type=range] {
+    grid-column-start: 1;
+    grid-row-start: 1;
+  }
+
+  .cs-range-bubble {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5em;
+    padding: 4px 8px;
+    text-wrap: nowrap;
+    background: var(--color-dark-4);
+    color: var(--color-light-1);
+    position: absolute;
+    border-radius: 3px;
+    top: -32px;
+    transform: translateX(-50%);
+  }
+
+  /* Between highlight */
+  .cs-range-shadow {
+    grid-column-start: 1;
+    grid-row-start: 1;
+
+    pointer-events: none;
+
+    z-index: 1;
+    background: linear-gradient(to bottom, transparent 20%, var(--color-shadow-primary), transparent 80%);
+    opacity: 75%;
+    width: 0;
+    left: 0;
+
+    position: relative;
+    height: 50%;
+    top: 25%;
+  }
+
+  /* Hide first track, only show second input */
+  input[type=range]:first-of-type {
+    position: relative;
+    top: 1px;
+    &::-webkit-slider-runnable-track {
+      background: none !important;
+      border: none !important;
+    }
+    &::-moz-range-track {
+      background: none !important;
+      border: none !important;
+    }
+    &::-ms-track {
+      background: none !important;
+      border: none !important;
+    }
+  }
+
+  /* min / max labels at the edges */
+  &::before, &::after {
+    font: 12px monospace;
+    content: counter(x);
+    position: absolute;
+    bottom: -2ch;
+  }
+
+  /* Position min label */
+  &::before {
+    counter-reset: x var(--min);
+    transform: translateX(-50%);
+    left: 6px;
+  }
+
+  /* Position max label */
+  &::after {
+    counter-reset: x var(--max);
+    right: 6px;
+    transform: translateX(50%);
+  }
+
+  /* Don't show shadow on either input */
+  input[type=range] {
+    &::-webkit-slider-runnable-track {
+      box-shadow: none !important;
+    }
+    &::-moz-range-track {
+      box-shadow: none !important;
+    }
+    &::-ms-track {
+      box-shadow: none !important;
+    }
+  }
+
+  /* Move thumb above track on webkit */
+  input[type=range]::-webkit-slider-thumb {
+    position: sticky;
+    z-index: 2;
+    pointer-events: all;
+  }
+
+  /* Attempt to move thumb above on firefox (doesn't work due to firefox bug) */
+  /* https://bugzilla.mozilla.org/show_bug.cgi?id=1663819 */
+  input[type=range]::-moz-range-thumb {
+    position: sticky;
+    z-index: 2;
+    pointer-events: all;
+  }
+}

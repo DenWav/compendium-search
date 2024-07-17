@@ -1,12 +1,81 @@
-<div id="compendium-search-app-content">
-  <section class="compendium-search-filter">
-    <div class="compendium-search-box">
-      <label for="compendium-search-input">Search</label>
-      <input type="search" id="compendium-search-input" />
-    </div>
-    <button data-action="rebuildIndex">Rebuild Index</button>
-  </section>
-  <section class="compendium-search-results">
-    <p>Hello world</p>
-  </section>
+<div class="tab {{tab.cssClass}} cs-tab" id="{{tab.id}}" data-tab="{{tab.id}}" data-group="{{tab.group}}">
+  <div class="compendium-search-app-content">
+    <section class="compendium-search-filter">
+      <button data-action="rebuildIndex">Rebuild Index</button>
+
+      {{#each search.schema}}
+        {{#if @first}}
+          <h2>Text Search</h2>
+        <div class="compendium-search-container">
+        {{/if}}
+        {{#if (eq kind "searchable") }}
+          <label for="compendium-search-input-{{@key}}">{{title}}</label>
+          <input type="search" id="compendium-search-input-{{@key}}" data-cs-field="{{@key}}" placeholder="Search {{title}}"/>
+        {{/if}}
+        {{#if @last}}
+        </div>
+        {{/if}}
+      {{/each}}
+
+      {{#each search.schema}}
+        {{#if (eq kind "selectable") }}
+          {{#unless optionTitle }}
+          <details class="compendium-search-selection" open>
+            <summary>
+              <h2>{{title}}</h2>
+            </summary>
+          {{else}}
+            <h2>{{title}}</h2>
+          {{/unless}}
+          {{#if optionTitle }}
+            <input type="checkbox" id="compendium-search-input-{{@key}}" data-cs-field="{{@key}}" checked />
+            <label for="compendium-search-input-{{@key}}">{{optionTitle}}</label>
+          {{else}}
+            <ul>
+              {{#each options}}
+                <li>
+                  <input type="checkbox" id="compendium-search-input-{{@key}}" checked />
+                  <label for="compendium-search-input-{{@key}}">{{this}}</label>
+                </li>
+              {{/each}}
+            </ul>
+          {{/if}}
+          {{#unless optionTitle}}
+          </details>
+          {{/unless}}
+        {{else if (eq kind "range")}}
+          <div class="compendium-search-range">
+            <h2>{{title}}</h2>
+            <div class="cs-range-container" id="compendium-search-input-{{@key}}"
+                 style="--step:{{step}}; --min:{{min}}; --max:{{max}}">
+              <div class="cs-range-shadow"></div>
+              <input type="range" value="{{min}}" min="{{min}}" max="{{max}}" step="{{step}}" data-cs-field="{{@key}}"
+                     oninput="this.nextElementSibling.value = this.value"/>
+              <output class="cs-range-bubble"></output>
+              <input type="range" value="{{max}}" min="{{min}}" max="{{max}}" step="{{step}}" data-cs-field="{{@key}}"
+                     oninput="this.nextElementSibling.value = this.value"/>
+              <output class="cs-range-bubble"></output>
+            </div>
+          </div>
+        {{/if}}
+      {{/each}}
+    </section>
+    <section class="compendium-search-results">
+      <div class="compendium-search-sort-container">
+        <label for="compendium-search-sort-by">Sort By</label>
+        <select id="compendium-search-sort-by" name="sort-by">
+          {{#each search.schema}}
+            <option value="{{@key}}">{{title}}</option>
+          {{/each}}
+        </select>
+        <label for="compendium-search-sort-dir">Direction</label>
+        <select id="compendium-search-sort-dir" name="sort-dir">
+          <option value="asc" selected>Ascending</option>
+          <option value="desc">Descending</option>
+        </select>
+      </div>
+      <ul id="compendium-search-result-list">
+      </ul>
+    </section>
+  </div>
 </div>
