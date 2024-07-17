@@ -5,11 +5,7 @@ import type {
 } from "@foundry/client-esm/applications/_types.mjs";
 import type { DeepPartial } from "@foundry/types/utils.mjs";
 import { CompendiumIndex } from "../CompendiumIndex.js";
-import {
-  RangeNumberFieldDescriptor,
-  SearchDefinition,
-  TabDefinition,
-} from "../SearchDefinition.js";
+import { SearchDefinition, TabDefinition } from "../SearchDefinition.js";
 import type { HandlebarsApplicationMixin as HandlebarsApplication } from "@foundry/client-esm/applications/api/_module.mjs";
 import type { DocumentSearchOptions } from "flexsearch";
 
