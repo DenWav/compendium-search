@@ -22,7 +22,9 @@
           "monstrosity": "Monstrosity",
           "ooze": "Ooze",
           "plant": "Plant",
-          "undead": "Undead"
+          "undead": "Undead",
+          "custom": "Custom",
+          "other": "Other"
         },
         "cr": "Challenge Rating"
       },

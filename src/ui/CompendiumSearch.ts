@@ -5,9 +5,10 @@ import type {
 } from "@foundry/client-esm/applications/_types.mjs";
 import type { DeepPartial } from "@foundry/types/utils.mjs";
 import { CompendiumIndex } from "../CompendiumIndex.js";
-import { SearchDefinition, TabDefinition } from "../SearchDefinition.js";
+import {CompendiumDoc, SearchDefinition, TabDefinition} from "../SearchDefinition.js";
 import type { HandlebarsApplicationMixin as HandlebarsApplication } from "@foundry/client-esm/applications/api/_module.mjs";
-import type { DocumentSearchOptions } from "flexsearch";
+import type { DocumentSearchOptions, SimpleDocumentSearchResultSetUnit } from "flexsearch";
+import {createElement} from "../util";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -87,10 +88,20 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   // noinspection JSUnusedGlobalSymbols
-  protected override _onRender(
-    _context: DeepPartial<ApplicationRenderContext>,
-    _options: DeepPartial<ApplicationRenderOptions>
+  protected override async _preRender(
+    context: DeepPartial<ApplicationRenderContext>,
+    options: DeepPartial<HandlebarsApplication.HandlebarsRenderOptions>,
   ) {
+    await super._preRender(context, options);
+    await loadTemplates(SearchDefinition.get.tabs.map(t => t.resultTemplate));
+  }
+
+  // noinspection JSUnusedGlobalSymbols
+  protected override _onRender(
+    context: DeepPartial<ApplicationRenderContext>,
+    options: DeepPartial<ApplicationRenderOptions>
+  ) {
+    super._onRender(context, options);
     this.#configureRanges();
     this.#configureInputs();
   }
@@ -100,19 +111,29 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
       filterElement
         .querySelectorAll<HTMLInputElement>("input:not([type=button])")
         .forEach(input => {
-          input.oninput = event => {
+          input.oninput = async event => {
             event.preventDefault();
-            this.performSearch(event.currentTarget as HTMLElement);
+            await this.performSearch(event.currentTarget as HTMLElement);
           };
         });
     });
   }
 
-  performSearch(input: HTMLElement) {
+  async performSearch(input: HTMLElement) {
+    const packs = game.packs;
+    if (!packs) {
+      return;
+    }
+
     const parentTab = input.closest<HTMLElement>(".cs-tab");
     if (!parentTab) {
       return;
     }
+    const resultList = parentTab.querySelector<HTMLUListElement>("#compendium-search-result-list")
+    if (!resultList) {
+      return;
+    }
+
     const id = parentTab.id;
     if (!id || !id.startsWith("search-")) {
       return;
@@ -128,21 +149,70 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
       return;
     }
 
-    // const searchObject = this.#createSearchObject(searchTabConfig, parentTab);
-    // index.searchAsync();
+    const searchObject = this.#createSearchObject(searchTabConfig, parentTab);
+    const allResults = await Promise.all(searchObject.map(s => index.searchAsync({ limit: 250, ...s })));
+    const results = allResults.flat();
+
+    const resultMap = new Map<string, SimpleDocumentSearchResultSetUnit[]>()
+    results.forEach(res => {
+      if (resultMap.has(res.field)) {
+        resultMap.get(res.field)?.push(res);
+      } else {
+        resultMap.set(res.field, [res]);
+      }
+    });
+
+    const resultGroupSets: Set<string>[] = [];
+    for (const resultGroup of resultMap.values()) {
+      // For multiple queries using the same field, we "or" them
+      resultGroupSets.push(new Set(resultGroup.flatMap(r => r.result as string[])));
+    }
+    const reduced = resultGroupSets.reduce((acc, current) => {
+      if (acc.size === 0) {
+        return current;
+      } else {
+        return acc.intersection(current);
+      }
+    }, new Set<string>());
+
+    const packMap: Map<string, CompendiumCollection<CompendiumCollection.Metadata>> = new Map();
+    packs.forEach(pack => packMap.set(pack.collection, pack));
+
+    const documents: CompendiumDoc[] = [];
+    for (const res of reduced) {
+      const idIndex = res.lastIndexOf(".")
+      const ending = res.lastIndexOf(".", idIndex - 1);
+      const name = res.substring(11, ending);
+      const pack = packMap.get(name);
+      if (pack) {
+        const doc = await pack.getDocument(res.substring(idIndex + 1));
+        if (doc) {
+          documents.push(doc);
+        }
+      }
+    }
+
+    const sortedResults = Array.from(documents)
+      .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
+      .slice(0, 50);
+
+    resultList.replaceChildren();
+    for (const doc of sortedResults) {
+      const docHtml = await renderTemplate(searchTabConfig.resultTemplate, doc);
+      resultList.append(createElement(docHtml));
+    }
   }
 
-  // @ts-expect-error
   #createSearchObject(
     tab: TabDefinition,
     filterElement: HTMLElement
   ): Partial<DocumentSearchOptions<false>>[] {
     const res: Partial<DocumentSearchOptions<false>>[] = [];
 
+    const inputFields = Array.from(filterElement.querySelectorAll<HTMLInputElement>("input[data-cs-field]"))
+
     for (const key of Object.keys(tab.schema)) {
-      const inputs = Array.from(
-        filterElement.querySelectorAll<HTMLInputElement>(`input[data-cs-field="${key}"]`).values()
-      );
+      const inputs = inputFields.filter(i => i.dataset.csField === key)
 
       const field = tab.schema[key];
       switch (field.kind) {
@@ -150,6 +220,14 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
           if (inputs.length !== 1) {
             const msg = `Incorrect number of inputs for searchable field: ${field.title}: ${inputs.length}`;
             throw Error(msg);
+          }
+
+          if (inputs[0].value.length > 0) {
+            res.push({
+              query: inputs[0].value,
+              // @ts-expect-error
+              field: key,
+            });
           }
 
           break;
@@ -168,8 +246,29 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
             throw Error(msg);
           }
 
-          // @ts-expect-error
-          const selectedOptions = inputs.map(i => i.dataset.csSelect).filter(v => v !== undefined);
+          if (field.type === "string" || field.type === "number") {
+            const selectedOptions = inputs.filter(i => i.checked)
+              .map(i => i.dataset.csSelect)
+              .filter(v => v !== undefined);
+
+            // Don't include this in the search if all options are selected (not necessary)
+            if (selectedOptions.length < Object.keys(field.options).length) {
+              res.push(...selectedOptions.map(opt => {
+                const o: Partial<DocumentSearchOptions<false>> = {
+                  query: opt,
+                  // @ts-expect-error
+                  field: key,
+                };
+                return o;
+              }));
+            }
+          } else {
+            res.push({
+              query: inputs[0].checked.toString(),
+              // @ts-expect-error
+              field: key,
+            });
+          }
 
           break;
         }
@@ -187,8 +286,21 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
           const minValue = Math.max(field.min, Math.min(firstValue, secondValue));
           const maxValue = Math.min(field.max, Math.max(firstValue, secondValue));
 
+          const options: number[] = [];
           // eslint-disable-next-line no-empty
-          for (let i = minValue; i <= maxValue; i += field.step) {}
+          for (let i = minValue; i <= maxValue; i += field.step) {
+            options.push(i);
+          }
+
+          res.push(...options.map(opt => {
+            const o: Partial<DocumentSearchOptions<false>> = {
+              query: opt.toString(),
+              // @ts-expect-error
+              field: key,
+            };
+            return o;
+          }));
+
           break;
         }
         default:
@@ -321,3 +433,4 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
     await CompendiumIndex.get.rebuild();
   }
 }
+

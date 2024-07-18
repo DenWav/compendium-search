@@ -54,7 +54,7 @@ export function registerArmor() {
         name: doc.name,
         description: doc.system.description.value,
         type: doc.system.type.value,
-        ac: Math.min(Math.floor(doc.system.armor.value), 20),
+        ac: Math.clamp(Math.floor(doc.system.armor.value), 0, 20),
       };
     },
   });
@@ -79,6 +79,8 @@ interface ItemTypeData {
   value: string;
 }
 
+const ARMOR_TYPES = new Set(["light", "medium", "heavy", "shield"]);
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function isArmor(value: any): value is Item5e {
   return (
@@ -87,6 +89,7 @@ function isArmor(value: any): value is Item5e {
     exists(value.system.type?.value) &&
     typeof value.system.description.value === "string" &&
     typeof value.system.armor.value === "number" &&
-    typeof value.system.type.value === "string"
+    typeof value.system.type.value === "string" &&
+    ARMOR_TYPES.has(value.system.type.value)
   );
 }

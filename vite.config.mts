@@ -63,7 +63,7 @@ export default Vite.defineConfig(
         keepNames: true,
       },
       optimizeDeps: {
-        include: [...Object.keys(packageJson.dependencies), "../node_modules/flexsearch/dist/module/document"],
+        include: Object.keys(packageJson.dependencies)
       },
       plugins: [
         checker({
@@ -80,6 +80,7 @@ export default Vite.defineConfig(
           structured: true,
           targets: [
             {src: path.resolve(__dirname, "src/**/*.ts"), dest: "./src/"},
+            {src: path.resolve(__dirname, "styles/**/*.css"), dest: "./"},
           ],
         }),
         // Vite HMR is only preconfigured for css files: add handler for HBS templates

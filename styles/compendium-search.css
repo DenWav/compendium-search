@@ -133,6 +133,19 @@
 .compendium-search-results {
   margin-left: 2em;
   grid-column-start: 2;
+  overflow-y: auto;
+}
+
+.cs-item {
+  height: 4em;
+}
+
+.cs-image {
+  height: 3.9em;
+
+  img {
+    height: 100%;
+  }
 }
 
 .compendium-search-tabs {

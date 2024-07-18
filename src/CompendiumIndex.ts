@@ -188,6 +188,7 @@ export class CompendiumIndex {
       if (key === "id") {
         continue;
       }
+
       const fieldDesc = def.schema[key];
       const value = input[key];
       let stringValue: string | null = null;
@@ -195,7 +196,7 @@ export class CompendiumIndex {
       // Verify values are valid
       if (typeof value === "string") {
         if ("options" in fieldDesc) {
-          if (value! in Object.keys((fieldDesc as SelectableStringFieldDescriptor).options)) {
+          if (!(value in (fieldDesc as SelectableStringFieldDescriptor).options)) {
             throw Error(`Invalid field value: ${value} for field ${key}`);
           } else {
             stringValue = value;
@@ -206,7 +207,7 @@ export class CompendiumIndex {
       } else if (typeof value === "number") {
         if ("options" in fieldDesc) {
           if (
-            value.toString()! in Object.keys((fieldDesc as SelectableNumberFieldDescriptor).options)
+            !(value.toString() in (fieldDesc as SelectableNumberFieldDescriptor).options)
           ) {
             throw Error(`Invalid field value: ${value} for field ${key}`);
           }
@@ -227,6 +228,12 @@ export class CompendiumIndex {
             }
           }
         }
+      } else if (typeof value === "boolean") {
+        stringValue = value.toString();
+      }
+
+      if (stringValue !== null) {
+        result[key] = stringValue;
       }
     }
 
@@ -300,7 +307,7 @@ export class CompendiumIndex {
       field: key,
       preset: "performance",
       tokenize: "full",
-      encode: "extra",
+      charset: "latin:extra",
       context: true,
     });
   }
@@ -310,7 +317,7 @@ export class CompendiumIndex {
       field: key,
       preset: "match",
       tokenize: "strict",
-      encode: false,
+      charset: "latin:false",
     });
   }
 }
