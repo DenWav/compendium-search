@@ -1,95 +1,81 @@
 import { CompendiumDoc, SearchDefinition } from "../../SearchDefinition.js";
 import { exists } from "../../util.js";
 
-export function registerArmor() {
+export function registerConsumables() {
   SearchDefinition.get.registerSearchTab({
-    title: "CS.dnd5e.armor.title",
-    icon: "fa-solid fa-shield",
+    title: "CS.dnd5e.consumable.title",
+    icon: "fa-solid fa-flask-round-potion",
     type: "Item",
-    resultTemplate: "modules/compendium-search/template/partial/dnd5e/armor.hbs",
+    resultTemplate: "modules/compendium-search/template/partial/dnd5e/consumable.hbs",
     schema: {
       name: {
-        title: "CS.dnd5e.armor.name",
+        title: "CS.dnd5e.consumable.name",
         type: "string",
         kind: "searchable",
       },
       description: {
-        title: "CS.dnd5e.armor.description",
+        title: "CS.dnd5e.consumable.description",
         type: "string",
         kind: "searchable",
       },
       type: {
-        title: "CS.dnd5e.armor.type.title",
+        title: "CS.dnd5e.consumable.type.title",
         type: "string",
         kind: "selectable",
         options: {
-          light: "CS.dnd5e.armor.type.light",
-          medium: "CS.dnd5e.armor.type.medium",
-          heavy: "CS.dnd5e.armor.type.heavy",
-          shield: "CS.dnd5e.armor.type.shield",
+          potion: "CS.dnd5e.consumable.type.potion",
+          food: "CS.dnd5e.consumable.type.food",
+          trinket: "CS.dnd5e.consumable.type.trinket",
+          rod: "CS.dnd5e.consumable.type.rod",
+          wand: "CS.dnd5e.consumable.type.wand",
+          scroll: "CS.dnd5e.consumable.type.scroll",
+          poison: "CS.dnd5e.consumable.type.poison",
+          ammo: "CS.dnd5e.consumable.type.ammo",
         },
-      },
-      ac: {
-        title: "CS.dnd5e.armor.ac",
-        type: "number",
-        kind: "range",
-        min: 0,
-        max: 20,
-        step: 1,
       },
     },
     mapper: async doc => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if ((doc as any).type !== "equipment") {
+      if ((doc as any).type !== "consumable") {
         return null;
       }
 
       if (!exists(doc.name)) {
         return null;
       }
-      if (!isArmor(doc)) {
+      if (!isConsumable(doc)) {
         return null;
       }
       return {
         name: doc.name,
         description: doc.system.description.value,
         type: doc.system.type.value,
-        ac: doc.system.armor.value,
       };
     },
   });
 }
 
 type Item5e = CompendiumDoc & {
-  system: EquipmentData;
+  system: ConsumableData;
 };
 
-interface EquipmentData {
+interface ConsumableData {
   description: DescriptionData;
-  armor: ArmorData;
   type: ItemTypeData;
 }
 interface DescriptionData {
   value: string;
 }
-interface ArmorData {
-  value: number;
-}
 interface ItemTypeData {
   value: string;
 }
 
-const ARMOR_TYPES = new Set(["light", "medium", "heavy", "shield"]);
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function isArmor(value: any): value is Item5e {
+function isConsumable(value: any): value is Item5e {
   return (
     exists(value?.system?.description?.value) &&
-    exists(value.system.armor?.value) &&
     exists(value.system.type?.value) &&
     typeof value.system.description.value === "string" &&
-    typeof value.system.armor.value === "number" &&
-    typeof value.system.type.value === "string" &&
-    ARMOR_TYPES.has(value.system.type.value)
+    typeof value.system.type.value === "string"
   );
 }

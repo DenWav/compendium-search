@@ -16,7 +16,7 @@ import { chunkify, createElement } from "./util.js";
 type IndexField = IndexOptions<unknown> & { field: string };
 type IndexDefinition = {
   tab: TabDefinition;
-  index: flexsearch.Document<unknown>;
+  index: flexsearch.Document<Record<string, string>, true>;
 };
 
 export class CompendiumIndex {
@@ -42,7 +42,7 @@ export class CompendiumIndex {
     this.#needsRebuild = true;
   }
 
-  indexFor(tab: TabDefinition): flexsearch.Document<unknown> | null {
+  indexFor(tab: TabDefinition): flexsearch.Document<Record<string, string>, true> | null {
     return this.#indices?.find(i => i.tab === tab)?.index ?? null;
   }
 
@@ -56,7 +56,6 @@ export class CompendiumIndex {
     const enabled = game.settings.get("compendium-search", "enabled-compendiums") as string[];
 
     const indices = this.#getIndices();
-    const prevTime = Date.now();
 
     const loader = CompendiumIndex.#initProgressDisplay();
 
@@ -96,10 +95,10 @@ export class CompendiumIndex {
 
           count++;
 
-          const currentTime = Date.now();
-          // pausing more keeps the UI more responsive, even if it slows down indexing
-          if (currentTime - prevTime > 15) {
-            await new Promise(resolve => setTimeout(resolve, 1));
+          // exclude items which only appear inside containers
+          const container = (doc as any)?.system?.container;
+          if (container !== undefined && container !== null) {
+            continue;
           }
 
           for (const index of indices) {
@@ -179,8 +178,8 @@ export class CompendiumIndex {
     doc: CompendiumDoc,
     input: ForSchema,
     def: TabDefinition
-  ): Record<string, string | null> & { id: string } {
-    const result: Record<string, string | null> & { id: string } = {
+  ): Record<string, string> & { id: string } {
+    const result: Record<string, string> & { id: string } = {
       id: doc.uuid,
     };
 
@@ -191,49 +190,50 @@ export class CompendiumIndex {
 
       const fieldDesc = def.schema[key];
       const value = input[key];
-      let stringValue: string | null = null;
 
       // Verify values are valid
       if (typeof value === "string") {
         if ("options" in fieldDesc) {
-          if (!(value in (fieldDesc as SelectableStringFieldDescriptor).options)) {
-            throw Error(`Invalid field value: ${value} for field ${key}`);
+          if (
+            !(value in (fieldDesc as SelectableStringFieldDescriptor).options) &&
+            value !== "custom"
+          ) {
+            result[key] = "other";
+            result[`${key}$real`] = value;
           } else {
-            stringValue = value;
+            result[key] = value;
           }
         } else {
-          stringValue = value;
+          result[key] = value;
         }
       } else if (typeof value === "number") {
         if ("options" in fieldDesc) {
-          if (
-            !(value.toString() in (fieldDesc as SelectableNumberFieldDescriptor).options)
-          ) {
+          if (!(value.toString() in (fieldDesc as SelectableNumberFieldDescriptor).options)) {
             throw Error(`Invalid field value: ${value} for field ${key}`);
           }
-          stringValue = value.toString();
+          result[key] = value.toString();
         } else {
           const range = fieldDesc as RangeNumberFieldDescriptor;
-          if (value === range.min || value === range.max) {
-            stringValue = value.toString();
+          result[`${key}$real`] = value.toString();
+          if (value <= range.min) {
+            result[key] = range.min.toString();
+          } else if (value >= range.max) {
+            result[key] = range.max.toString();
           } else {
-            for (let i = range.min; i <= range.max; i += range.step) {
-              if (value === i) {
-                stringValue = value.toString();
-                break;
-              }
-            }
-            if (stringValue === null) {
-              throw Error(`Invalid field value: ${value} for field ${key}`);
+            if (value <= range.min) {
+              result[key] = range.min.toString();
+            } else if (value >= range.max) {
+              result[key] = range.max.toString();
+            } else {
+              // round the given value into the stepped range
+              const roundedValue =
+                range.min + range.step * Math.round((value - range.min) / range.step);
+              result[key] = roundedValue.toString();
             }
           }
         }
       } else if (typeof value === "boolean") {
-        stringValue = value.toString();
-      }
-
-      if (stringValue !== null) {
-        result[key] = stringValue;
+        result[key] = value.toString();
       }
     }
 
@@ -256,6 +256,15 @@ export class CompendiumIndex {
           this.#handleString(fields, key, descriptor);
         } else if (descriptor.type === "number") {
           this.#handleStrict(fields, key);
+          if (!("options" in descriptor)) {
+            if (
+              !Number.isInteger(descriptor.min) ||
+              !Number.isInteger(descriptor.max) ||
+              !Number.isInteger(descriptor.step)
+            ) {
+              throw Error(`Invalid range for number field (all values must be integers): ${key}`);
+            }
+          }
         } else if (descriptor.type === "boolean") {
           this.#handleStrict(fields, key);
         } else {
@@ -266,11 +275,12 @@ export class CompendiumIndex {
 
       return {
         tab: t,
-        index: new flexsearch.Document({
+        index: new flexsearch.Document<Record<string, string>, true>({
           preset: "performance",
           document: {
             id: "id",
             index: fields,
+            store: true,
           },
         }),
       };
@@ -307,8 +317,11 @@ export class CompendiumIndex {
       field: key,
       preset: "performance",
       tokenize: "full",
-      charset: "latin:extra",
-      context: true,
+      charset: "latin:simple",
+      context: {
+        resolution: 3,
+        depth: 5,
+      },
     });
   }
 

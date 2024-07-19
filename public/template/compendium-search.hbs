@@ -9,8 +9,8 @@
         <div class="compendium-search-container">
         {{/if}}
         {{#if (eq kind "searchable") }}
-          <label for="compendium-search-input-{{@key}}">{{title}}</label>
-          <input type="search" id="compendium-search-input-{{@key}}" data-cs-field="{{@key}}" placeholder="Search {{title}}"/>
+          <label for="compendium-search-input-{{../tab.id}}-{{@key}}">{{title}}</label>
+          <input type="search" id="compendium-search-input-{{tab.id}}-{{@key}}" data-cs-field="{{@key}}" placeholder="Search {{title}}"/>
         {{/if}}
         {{#if @last}}
         </div>
@@ -24,29 +24,43 @@
             <summary>
               <h2>{{title}}</h2>
             </summary>
+            <div class="compendium-search-selection-buttons">
+              <button data-cs-select>{{localize "CS.selectAll"}}</button>
+              <button data-cs-deselect>{{localize "CS.deselectAll"}}</button>
+            </div>
           {{else}}
             <h2>{{title}}</h2>
           {{/unless}}
           {{#if optionTitle }}
-            <input type="checkbox" id="compendium-search-input-{{@key}}" data-cs-field="{{@key}}" checked />
-            <label for="compendium-search-input-{{@key}}">{{optionTitle}}</label>
+            <input type="checkbox" id="compendium-search-input-{{../tab.id}}-{{@key}}" data-cs-field="{{@key}}" checked />
+            <label for="compendium-search-input-{{../tab.id}}-{{@key}}">{{optionTitle}}</label>
           {{else}}
             <ul>
               {{#each options}}
                 <li>
-                  <input type="checkbox" id="compendium-search-input-{{@key}}" data-cs-field="{{@../key}}" data-cs-select="{{@key}}" checked />
-                  <label for="compendium-search-input-{{@key}}">{{this}}</label>
+                  <input type="checkbox" id="compendium-search-input-{{../../tab.id}}-{{@key}}" data-cs-field="{{@../key}}" data-cs-select="{{@key}}" checked />
+                  <label for="compendium-search-input-{{../../tab.id}}-{{@key}}">{{this}}</label>
                 </li>
               {{/each}}
+              {{#if (eq type "string") }}
+                <li>
+                  <input type="checkbox" id="compendium-search-input-{{../tab.id}}-custom" data-cs-field="{{@key}}" data-cs-select="custom" checked />
+                  <label for="compendium-search-input-{{../tab.id}}-custom">{{localize "CS.generic.custom"}}</label>
+                </li>
+                <li>
+                  <input type="checkbox" id="compendium-search-input-{{../tab.id}}-other" data-cs-field="{{@key}}" data-cs-select="other" checked />
+                  <label for="compendium-search-input-{{../tab.id}}-other">{{localize "CS.generic.other"}}</label>
+                </li>
+              {{/if}}
             </ul>
           {{/if}}
           {{#unless optionTitle}}
-          </details>
+            </details>
           {{/unless}}
         {{else if (eq kind "range")}}
           <div class="compendium-search-range">
             <h2>{{title}}</h2>
-            <div class="cs-range-container" id="compendium-search-input-{{@key}}"
+            <div class="cs-range-container" id="compendium-search-input-{{../tab.id}}-{{@key}}"
                  style="--step:{{step}}; --min:{{min}}; --max:{{max}}">
               <div class="cs-range-shadow"></div>
               <input type="range" value="{{min}}" min="{{min}}" max="{{max}}" step="{{step}}" data-cs-field="{{@key}}"
@@ -62,19 +76,19 @@
     </section>
     <section class="compendium-search-results">
       <div class="compendium-search-sort-container">
-        <label for="compendium-search-sort-by">Sort By</label>
-        <select id="compendium-search-sort-by" name="sort-by">
+        <label for="compendium-search-sort-by-{{tab.id}}">{{localize "CS.sortBy"}}</label>
+        <select class="compendium-search-sort-by" id="compendium-search-sort-by-{{tab.id}}">
           {{#each search.schema}}
             <option value="{{@key}}">{{title}}</option>
           {{/each}}
         </select>
-        <label for="compendium-search-sort-dir">Direction</label>
-        <select id="compendium-search-sort-dir" name="sort-dir">
+        <label for="compendium-search-sort-dir-{{tab.id}}">{{localize "CS.sortDirection"}}</label>
+        <select class="compendium-search-sort-dir" id="compendium-search-sort-dir-{{tab.id}}">
           <option value="asc" selected>Ascending</option>
           <option value="desc">Descending</option>
         </select>
       </div>
-      <ul id="compendium-search-result-list">
+      <ul class="compendium-search-result-list">
       </ul>
     </section>
   </div>

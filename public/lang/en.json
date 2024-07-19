@@ -1,6 +1,15 @@
 {
   "CS": {
     "title": "Compendium Search",
+    "sortBy": "Sort by",
+    "sortDirection": "Direction",
+    "selectAll": "Select All",
+    "deselectAll": "Deselect All",
+
+    "generic": {
+      "custom": "Custom",
+      "other": "Other"
+    },
 
     "dnd5e": {
       "monster": {
@@ -22,9 +31,7 @@
           "monstrosity": "Monstrosity",
           "ooze": "Ooze",
           "plant": "Plant",
-          "undead": "Undead",
-          "custom": "Custom",
-          "other": "Other"
+          "undead": "Undead"
         },
         "cr": "Challenge Rating"
       },
@@ -51,12 +58,83 @@
           "simpleR": "Simple Ranged",
           "martialM": "Martial Melee",
           "martialR": "Martial Ranged",
+          "natural": "Natural"
+        }
+      },
+      "consumable": {
+        "title": "Consumables",
+        "name": "Name",
+        "description": "Description",
+        "type": {
+          "title": "Type",
+          "potion": "Potion",
+          "food": "Food",
+          "trinket": "Trinket",
           "rod": "Rod",
           "wand": "Wand",
-          "ammo": "Ammunition",
-          "shield": "Shield"
+          "scroll": "Scroll",
+          "poison": "Poison",
+          "ammo": "Ammunition"
+        }
+      },
+      "spells": {
+        "title": "Spells",
+        "name": "Name",
+        "description": "Description",
+        "level": "Level",
+        "school": {
+          "title": "School",
+          "abj": "Abjuration",
+          "con": "Conjuration",
+          "div": "Divination",
+          "enc": "Enchantment",
+          "evo": "Evocation",
+          "ill": "Illusion",
+          "nec": "Necromancy",
+          "trs": "Transmutation"
+        }
+      },
+      "equip": {
+        "title": "Equipment",
+        "name": "Name",
+        "description": "Description",
+        "type": {
+          "title": "Title",
+          "armor": "Armor",
+          "shield": "Shield",
+          "clothing": "Clothing",
+          "trinket": "Trinket",
+          "tool": "Tool",
+          "container": "Container",
+          "loot": "Loot"
+        }
+      },
+      "characters": {
+        "title": "Characters",
+        "name": "Name",
+        "description": "Description",
+        "category": {
+          "title": "Category",
+          "class": "Class",
+          "subclass": "Subclass",
+          "race": "Race",
+          "background": "Background"
+        }
+      },
+      "feats": {
+        "title": "Features",
+        "name": "Name",
+        "description": "Description",
+        "category": {
+          "title": "Category",
+          "classFeature": "Class Feature",
+          "backgroundFeature": "Background Feature",
+          "raceFeature": "Race Feature",
+          "enchantment": "Enchantment",
+          "monsterFeature": "Monster Feature"
         }
       }
+
     }
   }
 }

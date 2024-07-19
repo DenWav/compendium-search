@@ -1,6 +1,10 @@
-<li class="cs-item flexrow" data-entry-uuid="{{uuid}}" data-type="Actor">
+<li class="cs-item item flexrow" data-entry-uuid="{{uuid}}" data-type="Actor">
   <div class="cs-image">
-    <img src="{{img}}" alt="{{name}}" loading="lazy" />
+    {{#if img}}
+      <img src="{{img}}" alt="{{name}}" loading="lazy" />
+    {{else}}
+      <img src="icons/svg/mystery-man.svg" alt="{{name}}" loading="lazy" />
+    {{/if}}
   </div>
   <div class="name">
     <a class="item-link">{{name}}</a>

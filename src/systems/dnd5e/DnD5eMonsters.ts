@@ -37,8 +37,6 @@ export function registerMonsters() {
           ooze: "CS.dnd5e.monster.type.ooze",
           plant: "CS.dnd5e.monster.type.plant",
           undead: "CS.dnd5e.monster.type.undead",
-          custom: "CS.dnd5e.monster.type.custom",
-          other: "CS.dnd5e.monster.type.other",
         },
       },
       cr: {
@@ -65,14 +63,12 @@ export function registerMonsters() {
       return {
         name: doc.name,
         biography: doc.system.details.biography.value,
-        type: KNOWN_TYPES.has(doc.system.details.type.value) ? doc.system.details.type.value : "other",
-        cr: Math.clamp(Math.floor(doc.system.details.cr), 0, 20),
+        type: doc.system.details.type.value,
+        cr: doc.system.details.cr,
       };
     },
   });
 }
-
-const KNOWN_TYPES = new Set(["aberration", "beast", "celestial", "construct", "dragon", "elemental", "fey", "fiend", "giant", "humanoid", "monstrosity", "ooze", "plant", "undead", "custom"]);
 
 type Actor5e = CompendiumDoc & {
   system: NPCData;

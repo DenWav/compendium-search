@@ -79,8 +79,8 @@
 .compendium-search-container {
   display: grid;
   grid-template-columns: 1fr 5fr;
-  gap: 0.5em;
-  padding: 0.5em 1em 0.5em 0;
+  gap: 10px;
+  padding: 10px 10px 10px 0;
 
   label {
     padding-top: 0.5em;
@@ -105,6 +105,26 @@
         width: 14px;
       }
     }
+  }
+}
+
+.compendium-search-selection-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding-right: 10px;
+
+  position: relative;
+  top: -3.2em;
+  margin-bottom: -2em;
+  pointer-events: none;
+
+  button {
+    height: 2em;
+    font-size: 0.8em;
+    width: fit-content;
+    padding: 0 1em;
+    pointer-events: all;
   }
 }
 

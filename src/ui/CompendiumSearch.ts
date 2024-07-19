@@ -3,12 +3,17 @@ import type {
   ApplicationRenderContext,
   ApplicationRenderOptions,
 } from "@foundry/client-esm/applications/_types.mjs";
-import type { DeepPartial } from "@foundry/types/utils.mjs";
+import type { DeepPartial, InexactPartial } from "@foundry/types/utils.mjs";
 import { CompendiumIndex } from "../CompendiumIndex.js";
-import {CompendiumDoc, SearchDefinition, TabDefinition} from "../SearchDefinition.js";
+import {
+  CompendiumDoc,
+  FieldDescriptor,
+  SearchDefinition,
+  TabDefinition,
+} from "../SearchDefinition.js";
 import type { HandlebarsApplicationMixin as HandlebarsApplication } from "@foundry/client-esm/applications/api/_module.mjs";
-import type { DocumentSearchOptions, SimpleDocumentSearchResultSetUnit } from "flexsearch";
-import {createElement} from "../util";
+import type { DocumentSearchOptions, EnrichedDocumentSearchResultSetUnit } from "flexsearch";
+import { createElement, getOrDefault, reduceResults, sortField } from "../util.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -90,7 +95,7 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
   // noinspection JSUnusedGlobalSymbols
   protected override async _preRender(
     context: DeepPartial<ApplicationRenderContext>,
-    options: DeepPartial<HandlebarsApplication.HandlebarsRenderOptions>,
+    options: DeepPartial<HandlebarsApplication.HandlebarsRenderOptions>
   ) {
     await super._preRender(context, options);
     await loadTemplates(SearchDefinition.get.tabs.map(t => t.resultTemplate));
@@ -102,34 +107,91 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
     options: DeepPartial<ApplicationRenderOptions>
   ) {
     super._onRender(context, options);
-    this.#configureRanges();
-    this.#configureInputs();
+    CompendiumSearch.#configureRanges();
+    CompendiumSearch.#configureInputs();
   }
 
-  #configureInputs() {
+  // noinspection JSUnusedGlobalSymbols
+  protected override _onFirstRender(
+    context: DeepPartial<ApplicationRenderContext>,
+    options: DeepPartial<ApplicationRenderOptions>
+  ) {
+    super._onFirstRender(context, options);
+
+    const firstSearchTab = document.getElementById("search-0");
+    if (!firstSearchTab) {
+      return;
+    }
+
+    void CompendiumSearch.#performSearch(firstSearchTab);
+  }
+
+  // noinspection JSUnusedGlobalSymbols
+  override changeTab(
+    tab: string,
+    group: string,
+    options?: InexactPartial<{
+      event: Event;
+      navElement: HTMLElement;
+      force: boolean;
+      updatePosition: boolean;
+    }>
+  ) {
+    super.changeTab(tab, group, options);
+
+    const tabElement = document.getElementById(tab);
+    if (tabElement === null) {
+      return;
+    }
+    const results = tabElement.querySelector<HTMLLIElement>(".compendium-search-result-list > li");
+    if (results === null) {
+      void CompendiumSearch.#performSearch(tabElement);
+    }
+  }
+
+  static #configureInputs() {
     document.querySelectorAll(".compendium-search-filter").forEach(filterElement => {
       filterElement
         .querySelectorAll<HTMLInputElement>("input:not([type=button])")
         .forEach(input => {
-          input.oninput = async event => {
+          input.oninput = event => {
             event.preventDefault();
-            await this.performSearch(event.currentTarget as HTMLElement);
+            void CompendiumSearch.#performSearch(event.target as HTMLElement);
           };
         });
     });
+    document
+      .querySelectorAll<HTMLSelectElement>(".compendium-search-sort-container > select")
+      .forEach(selectElement => {
+        selectElement.oninput = event => {
+          event.preventDefault();
+          void CompendiumSearch.#performSearch(event.target as HTMLElement);
+        };
+      });
+
+    function selectButton(event: Event, container: HTMLElement, checked: boolean) {
+      event.preventDefault();
+      container.querySelectorAll<HTMLInputElement>("input[type=checkbox]").forEach(input => {
+        input.checked = checked;
+      });
+      void CompendiumSearch.#performSearch(event.target as HTMLElement);
+    }
+    document.querySelectorAll<HTMLElement>(".compendium-search-selection").forEach(container => {
+      container.querySelectorAll<HTMLButtonElement>("button[data-cs-select]").forEach(button => {
+        button.onclick = event => selectButton(event,  container,true);
+      });
+      container.querySelectorAll<HTMLButtonElement>("button[data-cs-deselect]").forEach(button => {
+        button.onclick = event => selectButton(event,  container,false);
+      });
+    });
   }
 
-  async performSearch(input: HTMLElement) {
-    const packs = game.packs;
-    if (!packs) {
-      return;
-    }
-
+  static async #performSearch(input: HTMLElement) {
     const parentTab = input.closest<HTMLElement>(".cs-tab");
     if (!parentTab) {
       return;
     }
-    const resultList = parentTab.querySelector<HTMLUListElement>("#compendium-search-result-list")
+    const resultList = parentTab.querySelector<HTMLUListElement>(".compendium-search-result-list");
     if (!resultList) {
       return;
     }
@@ -138,81 +200,88 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
     if (!id || !id.startsWith("search-")) {
       return;
     }
-    const tabNum = parseInt(id.slice(7), 10);
+    const tabNum = parseInt(id.substring(7), 10);
     if (tabNum >= SearchDefinition.get.tabs.length) {
       return;
     }
-    const searchTabConfig = SearchDefinition.get.tabs[tabNum];
 
+    const searchTabConfig = SearchDefinition.get.tabs[tabNum];
     const index = CompendiumIndex.get.indexFor(searchTabConfig);
     if (!index) {
       return;
     }
 
-    const searchObject = this.#createSearchObject(searchTabConfig, parentTab);
-    const allResults = await Promise.all(searchObject.map(s => index.searchAsync({ limit: 250, ...s })));
-    const results = allResults.flat();
-
-    const resultMap = new Map<string, SimpleDocumentSearchResultSetUnit[]>()
-    results.forEach(res => {
-      if (resultMap.has(res.field)) {
-        resultMap.get(res.field)?.push(res);
-      } else {
-        resultMap.set(res.field, [res]);
-      }
-    });
-
-    const resultGroupSets: Set<string>[] = [];
-    for (const resultGroup of resultMap.values()) {
-      // For multiple queries using the same field, we "or" them
-      resultGroupSets.push(new Set(resultGroup.flatMap(r => r.result as string[])));
+    const searchObject = CompendiumSearch.#createSearchObject(searchTabConfig, parentTab);
+    if (searchObject.length === 0) {
+      resultList.replaceChildren();
+      return;
     }
-    const reduced = resultGroupSets.reduce((acc, current) => {
-      if (acc.size === 0) {
-        return current;
-      } else {
-        return acc.intersection(current);
-      }
-    }, new Set<string>());
+    const results = (
+      await Promise.all(
+        searchObject.map(s => index.searchAsync({ limit: 1000, enrich: true, ...s }))
+      )
+    ).flat();
 
-    const packMap: Map<string, CompendiumCollection<CompendiumCollection.Metadata>> = new Map();
-    packs.forEach(pack => packMap.set(pack.collection, pack));
+    const resultMap = new Map<
+      string,
+      EnrichedDocumentSearchResultSetUnit<Record<string, string>>[]
+    >();
+    for (const res of results) {
+      getOrDefault(resultMap, res.field, Array).push(res);
+    }
 
-    const documents: CompendiumDoc[] = [];
-    for (const res of reduced) {
-      const idIndex = res.lastIndexOf(".")
-      const ending = res.lastIndexOf(".", idIndex - 1);
-      const name = res.substring(11, ending);
-      const pack = packMap.get(name);
-      if (pack) {
-        const doc = await pack.getDocument(res.substring(idIndex + 1));
-        if (doc) {
-          documents.push(doc);
-        }
+    for (const s of searchObject) {
+      // @ts-expect-error
+      if (!resultMap.has(s.field)) {
+        // This field isn't present in the result, so it matches nothing
+        resultList.replaceChildren();
+        return;
       }
     }
 
-    const sortedResults = Array.from(documents)
-      .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
-      .slice(0, 50);
+    const reduced = reduceResults(
+      resultMap,
+      r => r.result.map(v => v.doc),
+      v => v.id
+    );
+
+    const sorted = Array.from(reduced)
+      .sort(CompendiumSearch.#getSortFunction(parentTab, searchTabConfig.schema) ?? undefined)
+      .slice(0, 100)
+      .map(d => d.id as string);
 
     resultList.replaceChildren();
-    for (const doc of sortedResults) {
-      const docHtml = await renderTemplate(searchTabConfig.resultTemplate, doc);
-      resultList.append(createElement(docHtml));
+    for (const res of sorted) {
+      const doc = (await fromUuid(res)) as CompendiumDoc | null;
+      if (doc !== null) {
+        const renderedDoc = createElement(
+          await renderTemplate(searchTabConfig.resultTemplate, doc)
+        );
+        const anchor = renderedDoc.querySelector("a");
+        if (anchor) {
+          anchor.onclick = async () => {
+            if (doc?.sheet) {
+              doc.sheet.render(true);
+            }
+          };
+        }
+        resultList.append(renderedDoc);
+      }
     }
   }
 
-  #createSearchObject(
+  static #createSearchObject(
     tab: TabDefinition,
     filterElement: HTMLElement
   ): Partial<DocumentSearchOptions<false>>[] {
     const res: Partial<DocumentSearchOptions<false>>[] = [];
 
-    const inputFields = Array.from(filterElement.querySelectorAll<HTMLInputElement>("input[data-cs-field]"))
+    const inputFields = Array.from(
+      filterElement.querySelectorAll<HTMLInputElement>("input[data-cs-field]")
+    );
 
     for (const key of Object.keys(tab.schema)) {
-      const inputs = inputFields.filter(i => i.dataset.csField === key)
+      const inputs = inputFields.filter(i => i.dataset.csField === key);
 
       const field = tab.schema[key];
       switch (field.kind) {
@@ -238,7 +307,7 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
             throw Error(msg);
           } else if (
             (field.type === "string" || field.type === "number") &&
-            Object.keys(field.options).length !== inputs.length
+            Object.keys(field.options).length + 2 !== inputs.length
           ) {
             const msg =
               `Incorrect number of inputs for selectable field: ${field.title}: ` +
@@ -247,21 +316,26 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
           }
 
           if (field.type === "string" || field.type === "number") {
-            const selectedOptions = inputs.filter(i => i.checked)
+            const selectedOptions = inputs
+              .filter(i => i.checked)
               .map(i => i.dataset.csSelect)
               .filter(v => v !== undefined);
 
-            // Don't include this in the search if all options are selected (not necessary)
-            if (selectedOptions.length < Object.keys(field.options).length) {
-              res.push(...selectedOptions.map(opt => {
+            // nothing is selected, so it's impossible for any items to match
+            if (selectedOptions.length === 0) {
+              return [];
+            }
+
+            res.push(
+              ...selectedOptions.map(opt => {
                 const o: Partial<DocumentSearchOptions<false>> = {
                   query: opt,
                   // @ts-expect-error
                   field: key,
                 };
                 return o;
-              }));
-            }
+              })
+            );
           } else {
             res.push({
               query: inputs[0].checked.toString(),
@@ -287,19 +361,20 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
           const maxValue = Math.min(field.max, Math.max(firstValue, secondValue));
 
           const options: number[] = [];
-          // eslint-disable-next-line no-empty
           for (let i = minValue; i <= maxValue; i += field.step) {
             options.push(i);
           }
 
-          res.push(...options.map(opt => {
-            const o: Partial<DocumentSearchOptions<false>> = {
-              query: opt.toString(),
-              // @ts-expect-error
-              field: key,
-            };
-            return o;
-          }));
+          res.push(
+            ...options.map(opt => {
+              const o: Partial<DocumentSearchOptions<false>> = {
+                query: opt.toString(),
+                // @ts-expect-error
+                field: key,
+              };
+              return o;
+            })
+          );
 
           break;
         }
@@ -312,7 +387,40 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
     return res;
   }
 
-  #configureRanges() {
+  static #getSortFunction(
+    tab: HTMLElement,
+    schema: Record<string, FieldDescriptor>
+  ): ((left: Record<string, string>, right: Record<string, string>) => number) | null {
+    const sortBy = tab.querySelector<HTMLSelectElement>(".compendium-search-sort-by");
+    const sortDir = tab.querySelector<HTMLSelectElement>(".compendium-search-sort-dir");
+
+    if (!sortBy || !sortDir || sortBy.selectedIndex === -1 || sortDir.selectedIndex === -1) {
+      return null;
+    }
+
+    const sortDirValue = sortDir.options[sortDir.selectedIndex].value;
+    if (sortDirValue !== "asc" && sortDirValue !== "desc") {
+      return null;
+    }
+
+    const sortByField = sortBy.options[sortBy.selectedIndex].value;
+    if (!(sortByField in schema)) {
+      return null;
+    }
+
+    const fieldDesc = schema[sortByField];
+    if (
+      fieldDesc.type === "string" ||
+      fieldDesc.type === "number" ||
+      fieldDesc.type === "boolean"
+    ) {
+      return sortField(sortByField, sortDirValue, fieldDesc.type);
+    } else {
+      return null;
+    }
+  }
+
+  static #configureRanges() {
     document.querySelectorAll(".cs-range-container").forEach(wrap => {
       const shadow = wrap.querySelector<HTMLDivElement>(".cs-range-shadow");
       if (shadow === null) {
@@ -332,7 +440,11 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
     });
   }
 
-  #configureBubble(shadow: HTMLDivElement, range: HTMLInputElement, otherRange: HTMLInputElement) {
+  static #configureBubble(
+    shadow: HTMLDivElement,
+    range: HTMLInputElement,
+    otherRange: HTMLInputElement
+  ) {
     const bubble: HTMLOutputElement = range.nextElementSibling! as HTMLOutputElement;
     const otherBubble: HTMLOutputElement = otherRange.nextElementSibling! as HTMLOutputElement;
     range.addEventListener("input", () => {
@@ -342,7 +454,11 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
     this.#setBubble(range, bubble, otherBubble);
   }
 
-  #setBubble(range: HTMLInputElement, bubble: HTMLOutputElement, otherBubble: HTMLOutputElement) {
+  static #setBubble(
+    range: HTMLInputElement,
+    bubble: HTMLOutputElement,
+    otherBubble: HTMLOutputElement
+  ) {
     const val = parseInt(range.value, 10);
     const otherVal = parseInt((otherBubble.previousElementSibling as HTMLInputElement).value, 10);
 
@@ -381,11 +497,11 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
     }
   }
 
-  #setBubbleValue(bubble: HTMLOutputElement, value: unknown) {
+  static #setBubbleValue(bubble: HTMLOutputElement, value: unknown) {
     bubble.innerHTML = `<span>${value}</span>`;
   }
 
-  #sortBubbles(
+  static #sortBubbles(
     value1: number,
     value2: number,
     bubble1: HTMLOutputElement,
@@ -407,7 +523,7 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
     }
   }
 
-  #setShadow(shadow: HTMLDivElement, first: HTMLInputElement, second: HTMLInputElement) {
+  static #setShadow(shadow: HTMLDivElement, first: HTMLInputElement, second: HTMLInputElement) {
     const firstNum = parseInt(first.value, 10);
     const secondNum = parseInt(second.value, 10);
     const leftSide = Math.min(firstNum, secondNum);
@@ -429,8 +545,8 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
     shadow.style.width = `${width * 100}%`;
   }
 
-  static async rebuildIndex(_event: Event, _element: HTMLButtonElement) {
+  static async rebuildIndex(_event: Event, element: HTMLButtonElement) {
     await CompendiumIndex.get.rebuild();
+    await CompendiumSearch.#performSearch(element);
   }
 }
-

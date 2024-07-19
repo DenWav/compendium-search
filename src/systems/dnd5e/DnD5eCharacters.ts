@@ -1,81 +1,74 @@
 import { CompendiumDoc, SearchDefinition } from "../../SearchDefinition.js";
 import { exists } from "../../util.js";
 
-export function registerWeapons() {
+export function registerCharacters() {
   SearchDefinition.get.registerSearchTab({
-    title: "CS.dnd5e.weapon.title",
-    icon: "fa-solid fa-sword",
+    title: "CS.dnd5e.characters.title",
+    icon: "fa-solid fa-head-side",
     type: "Item",
-    resultTemplate: "modules/compendium-search/template/partial/dnd5e/weapon.hbs",
+    resultTemplate: "modules/compendium-search/template/partial/dnd5e/character.hbs",
     schema: {
       name: {
-        title: "CS.dnd5e.weapon.name",
+        title: "CS.dnd5e.characters.name",
         type: "string",
         kind: "searchable",
       },
       description: {
-        title: "CS.dnd5e.weapon.description",
+        title: "CS.dnd5e.characters.description",
         type: "string",
         kind: "searchable",
       },
-      type: {
-        title: "CS.dnd5e.weapon.type.title",
+      category: {
+        title: "CS.dnd5e.characters.category.title",
         type: "string",
         kind: "selectable",
         options: {
-          simpleM: "CS.dnd5e.weapon.type.simpleM",
-          simpleR: "CS.dnd5e.weapon.type.simpleR",
-          martialM: "CS.dnd5e.weapon.type.martialM",
-          martialR: "CS.dnd5e.weapon.type.martialR",
-          natural: "CS.dnd5e.weapon.type.natural",
+          class: "CS.dnd5e.characters.category.class",
+          subclass: "CS.dnd5e.characters.category.subclass",
+          race: "CS.dnd5e.characters.category.race",
+          background: "CS.dnd5e.characters.category.background",
         },
       },
     },
     mapper: async doc => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if ((doc as any).type !== "weapon") {
-        return null;
-      }
-      if (!exists(doc.name)) {
-        return null;
-      }
-      if (!isWeapon(doc)) {
+      if (!CHARACTER_TYPES.has((doc as any).type)) {
         return null;
       }
 
+      if (!exists(doc.name)) {
+        return null;
+      }
+      if (!isCharacterFeature(doc)) {
+        return null;
+      }
       return {
         name: doc.name,
         description: doc.system.description.value,
-        type: doc.system.type.value,
+        category: doc.type,
       };
     },
   });
 }
 
-// @ts-ignore
+const CHARACTER_TYPES = new Set(["class", "subclass", "race", "background"]);
+
 type Item5e = CompendiumDoc & {
-  system: WeaponData;
+  type: string,
+  system: FeatureData;
 };
 
-interface WeaponData {
+interface FeatureData {
   description: DescriptionData;
-  type: ItemTypeData;
 }
-
 interface DescriptionData {
   value: string;
 }
 
-interface ItemTypeData {
-  value: string;
-}
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function isWeapon(value: any): value is Item5e {
+function isCharacterFeature(value: any): value is Item5e {
   return (
     exists(value?.system?.description?.value) &&
-    exists(value.system.type?.value) &&
-    typeof value.system.description.value === "string" &&
-    typeof value.system.type.value === "string"
+    typeof value.system.description.value === "string"
   );
 }
