@@ -1,8 +1,3 @@
-import type {
-  ApplicationConfiguration,
-  ApplicationRenderContext,
-  ApplicationRenderOptions,
-} from "@foundry/client-esm/applications/_types.mjs";
 import type { DeepPartial, InexactPartial } from "@foundry/types/utils.mjs";
 import { CompendiumIndex } from "../CompendiumIndex.js";
 import {
@@ -15,11 +10,19 @@ import type { HandlebarsApplicationMixin as HandlebarsApplication } from "@found
 import type { DocumentSearchOptions, EnrichedDocumentSearchResultSetUnit } from "flexsearch";
 import { createElement, getOrDefault, reduceResults, sortField } from "../util.js";
 
-const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+import ApplicationV2 = foundry.applications.api.ApplicationV2;
+import HandlebarsApplicationMixin = foundry.applications.api.HandlebarsApplicationMixin;
 
-export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) {
+type CompendiumSearchContext = {
+  tabs?: Record<string, Partial<ApplicationTab>>,
+  tab?: Partial<ApplicationTab>,
+  search?: TabDefinition,
+};
+
+export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2<CompendiumSearchContext>) {
+
   // noinspection JSUnusedGlobalSymbols
-  static override DEFAULT_OPTIONS = {
+  static override DEFAULT_OPTIONS: DeepPartial<ApplicationV2.Configuration> = {
     id: "compendium-search-app",
     window: {
       title: "CS.title",
@@ -42,34 +45,36 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
         template: "templates/generic/tab-navigation.hbs",
       },
     };
-    SearchDefinition.get.tabs.forEach((_tab, index) => {
-      parts[`search-${index}`] = {
+    SearchDefinition.get.tabs.forEach(tab => {
+      parts[`search-${tab.id}`] = {
         template: "modules/compendium-search/template/compendium-search.hbs",
       };
     });
     return parts;
   }
 
-  // noinspection JSUnusedGlobalSymbols
-  override tabGroups: Record<string, string> = {
-    search: "search-0", // first tab
-  };
+  override tabGroups: Record<string, string>;
 
-  constructor(options: DeepPartial<ApplicationConfiguration> = {}) {
+  constructor(options: DeepPartial<ApplicationV2.Configuration> = {}) {
     super(options);
+
+    this.tabGroups = {
+      search: `search-${SearchDefinition.get.tabs[0].id}`,
+    };
   }
 
   // noinspection JSUnusedGlobalSymbols
   protected override async _preparePartContext(
     partId: string,
-    context: ApplicationRenderContext,
-    _options: DeepPartial<HandlebarsApplication.HandlebarsRenderOptions>
-  ): Promise<ApplicationRenderContext> {
+    context: CompendiumSearchContext,
+    _options: DeepPartial<HandlebarsApplicationMixin.HandlebarsRenderOptions>
+  ): Promise<Record<string, unknown>> {
     if (partId === "tabs") {
       context.tabs = this.#getTabs();
     } else if (partId.startsWith("search")) {
-      context.tab = context.tabs[partId];
-      context.search = SearchDefinition.get.tabs[parseInt(partId.slice(7), 10)];
+      context.tab = (context.tabs as Record<string, Partial<ApplicationTab>>)[partId];
+      const tabId = partId.slice(7);
+      context.search = SearchDefinition.get.tabs.find(tab => tab.id === tabId);
     }
 
     return context;
@@ -77,9 +82,9 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
 
   #getTabs() {
     const tabs: Record<string, Partial<ApplicationTab>> = {};
-    SearchDefinition.get.tabs.forEach((tab, index) => {
-      tabs[`search-${index}`] = {
-        id: `search-${index}`,
+    SearchDefinition.get.tabs.forEach(tab => {
+      tabs[`search-${tab.id}`] = {
+        id: `search-${tab.id}`,
         group: "search",
         icon: tab.icon,
         label: tab.title,
@@ -94,7 +99,7 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
 
   // noinspection JSUnusedGlobalSymbols
   protected override async _preRender(
-    context: DeepPartial<ApplicationRenderContext>,
+    context: DeepPartial<CompendiumSearchContext>,
     options: DeepPartial<HandlebarsApplication.HandlebarsRenderOptions>
   ) {
     await super._preRender(context, options);
@@ -103,8 +108,8 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
 
   // noinspection JSUnusedGlobalSymbols
   protected override _onRender(
-    context: DeepPartial<ApplicationRenderContext>,
-    options: DeepPartial<ApplicationRenderOptions>
+    context: DeepPartial<CompendiumSearchContext>,
+    options: DeepPartial<ApplicationV2.RenderOptions>
   ) {
     super._onRender(context, options);
     CompendiumSearch.#configureRanges();
@@ -113,12 +118,12 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
 
   // noinspection JSUnusedGlobalSymbols
   protected override _onFirstRender(
-    context: DeepPartial<ApplicationRenderContext>,
-    options: DeepPartial<ApplicationRenderOptions>
+    context: DeepPartial<CompendiumSearchContext>,
+    options: DeepPartial<ApplicationV2.RenderOptions>
   ) {
     super._onFirstRender(context, options);
 
-    const firstSearchTab = document.getElementById("search-0");
+    const firstSearchTab = document.getElementById(`search-${SearchDefinition.get.tabs[0].id}`);
     if (!firstSearchTab) {
       return;
     }
@@ -200,12 +205,12 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
     if (!id || !id.startsWith("search-")) {
       return;
     }
-    const tabNum = parseInt(id.substring(7), 10);
-    if (tabNum >= SearchDefinition.get.tabs.length) {
+    const tabId = id.substring(7);
+    const searchTabConfig = SearchDefinition.get.tabs.find(tab => tab.id === tabId);
+    if (!searchTabConfig) {
       return;
     }
 
-    const searchTabConfig = SearchDefinition.get.tabs[tabNum];
     const index = CompendiumIndex.get.indexFor(searchTabConfig);
     if (!index) {
       return;
@@ -545,7 +550,7 @@ export class CompendiumSearch extends HandlebarsApplicationMixin(ApplicationV2) 
     shadow.style.width = `${width * 100}%`;
   }
 
-  static async rebuildIndex(_event: Event, element: HTMLButtonElement) {
+  static async rebuildIndex(_event: PointerEvent, element: HTMLElement) {
     await CompendiumIndex.get.rebuild();
     await CompendiumSearch.#performSearch(element);
   }

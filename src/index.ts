@@ -26,7 +26,6 @@ Hooks.on("ready", () => {
     label: "Configure",
     hint: "Compendiums to include in searches",
     icon: "fa-solid fa-bars",
-    // @ts-expect-error
     type: EnabledCompendiumsSettings,
     restricted: true,
   });
@@ -37,6 +36,15 @@ Hooks.on("ready", () => {
     type: Array,
     default: [],
   });
+});
+
+Hooks.on("setup", () => {
+  const request = window.indexedDB.open("compendium-search", 1);
+  request.onupgradeneeded = (event) => {
+    // @ts-expect-error
+    const db: IDBDatabase = event.target.result;
+    db.createObjectStore("indices");
+  };
 });
 
 Hooks.on("renderCompendiumDirectory", () => {

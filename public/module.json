@@ -11,6 +11,7 @@
   "compatibility": {
     "minimum": 11
   },
+  "persistentStorage": true,
   "esmodules": ["index.mjs"],
   "styles": ["styles/compendium-search.css"],
   "languages": [

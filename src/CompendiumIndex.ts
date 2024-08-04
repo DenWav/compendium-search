@@ -51,8 +51,7 @@ export class CompendiumIndex {
       return;
     }
 
-    // @ts-expect-error
-    const packs: CompendiumPacks = game.packs;
+    const packs = game.packs;
     const enabled = game.settings.get("compendium-search", "enabled-compendiums") as string[];
 
     const indices = this.#getIndices();
@@ -74,6 +73,7 @@ export class CompendiumIndex {
 
       console.log(`Compendium Search | Indexing ${packName}`);
 
+      // @ts-expect-error
       const compendiumIndex = await pack.getIndex({ fields: ["_id"] });
       const total = compendiumIndex.contents.length;
 
@@ -126,6 +126,24 @@ export class CompendiumIndex {
       CompendiumIndex.#removeProgressDisplay();
     }
 
+    const request = window.indexedDB.open("compendium-search", 1);
+    request.onsuccess = (event) => {
+      // @ts-expect-error
+      const db: IDBDatabase = event.target.result;
+
+      for (const index of indices) {
+        void index.index.export((exportId, value) => {
+          const key = `${index.tab.id}-${exportId}`;
+
+          const transaction = db.transaction(["indices"], "readwrite");
+          transaction.objectStore("indices").add(value, key);
+
+          // @ts-expect-error
+          void FilePicker.uploadPersistent("compendium-search", `${key}.json`, new File([value as string], `${key}.json`, { type: 'application/json' }));
+        });
+      }
+    };
+
     this.#needsRebuild = false;
   }
 
@@ -134,6 +152,7 @@ export class CompendiumIndex {
       return pack.metadata.label;
     }
     const ancestors = [...pack.folder.ancestors, pack.folder];
+    // @ts-expect-error
     const folderName = ancestors.map(a => a.name).join("/");
     return `${folderName}/${pack.metadata.label}`;
   }

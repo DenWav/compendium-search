@@ -3,6 +3,7 @@ import { exists } from "../../util.js";
 
 export function registerConsumables() {
   SearchDefinition.get.registerSearchTab({
+    id: "consumables",
     title: "CS.dnd5e.consumable.title",
     icon: "fa-solid fa-flask-round-potion",
     type: "Item",
@@ -40,9 +41,6 @@ export function registerConsumables() {
         return null;
       }
 
-      if (!exists(doc.name)) {
-        return null;
-      }
       if (!isConsumable(doc)) {
         return null;
       }
@@ -56,6 +54,7 @@ export function registerConsumables() {
 }
 
 type Item5e = CompendiumDoc & {
+  name: string;
   system: ConsumableData;
 };
 
@@ -73,8 +72,10 @@ interface ItemTypeData {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function isConsumable(value: any): value is Item5e {
   return (
-    exists(value?.system?.description?.value) &&
+    exists(value?.name) &&
+    exists(value.system?.description?.value) &&
     exists(value.system.type?.value) &&
+    typeof value.name === "string" &&
     typeof value.system.description.value === "string" &&
     typeof value.system.type.value === "string"
   );

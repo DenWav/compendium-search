@@ -3,6 +3,7 @@ import { exists } from "../../util.js";
 
 export function registerFeatures() {
   SearchDefinition.get.registerSearchTab({
+    id: "features",
     title: "CS.dnd5e.feats.title",
     icon: "fa-solid fa-dice-d20",
     type: "Item",
@@ -37,9 +38,6 @@ export function registerFeatures() {
         return null;
       }
 
-      if (!exists(doc.name)) {
-        return null;
-      }
       if (!isFeature(doc)) {
         return null;
       }
@@ -53,15 +51,16 @@ export function registerFeatures() {
 }
 
 type Item5e = CompendiumDoc & {
+  name: string;
   system: FeatureData;
 };
 
 interface FeatureData {
-  type: FeatureTypeData,
+  type: FeatureTypeData;
   description: DescriptionData;
 }
 interface FeatureTypeData {
-  value: string,
+  value: string;
 }
 interface DescriptionData {
   value: string;
@@ -70,8 +69,10 @@ interface DescriptionData {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function isFeature(value: any): value is Item5e {
   return (
-    exists(value?.system?.description?.value) &&
+    exists(value?.name) &&
+    exists(value.system?.description?.value) &&
     exists(value?.system?.type?.value) &&
+    typeof value.name === "string" &&
     typeof value.system.description.value === "string" &&
     typeof value.system.type.value === "string"
   );

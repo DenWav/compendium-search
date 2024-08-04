@@ -3,6 +3,7 @@ import { exists } from "../../util.js";
 
 export function registerMonsters() {
   SearchDefinition.get.registerSearchTab({
+    id: "monsters",
     title: "CS.dnd5e.monster.title",
     icon: "fa-solid fa-paw-claws",
     type: "Actor",
@@ -53,9 +54,6 @@ export function registerMonsters() {
       if ((doc as any).type !== "npc") {
         return null;
       }
-      if (!exists(doc.name)) {
-        return null;
-      }
       if (!isActor5e(doc)) {
         return null;
       }
@@ -71,6 +69,7 @@ export function registerMonsters() {
 }
 
 type Actor5e = CompendiumDoc & {
+  name: string;
   system: NPCData;
 };
 interface NPCData {
@@ -91,9 +90,11 @@ interface NPCType {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function isActor5e(value: any): value is Actor5e {
   return (
-    exists(value?.system?.details?.biography?.value) &&
+    exists(value?.name) &&
+    exists(value.system?.details?.biography?.value) &&
     exists(value.system.details.type?.value) &&
     exists(value.system.details.cr) &&
+    typeof value.name &&
     typeof value.system.details.biography.value === "string" &&
     typeof value.system.details.type.value === "string" &&
     typeof value.system.details.cr === "number"

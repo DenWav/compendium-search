@@ -62,6 +62,7 @@ export type ForSchema<T extends Record<string, FieldDescriptor> = Record<string,
 export interface TabDefinition<
   Schema extends Record<string, FieldDescriptor> = Record<string, FieldDescriptor>,
 > {
+  id: string,
   title: string;
   icon: string;
   type: foundry.CONST.COMPENDIUM_DOCUMENT_TYPES;
@@ -97,6 +98,10 @@ export class SearchDefinition {
       } else {
         return value;
       }
+    }
+
+    if (!this.#tabDefs.every(t => def.id !== t.id)) {
+      throw Error(`Duplicate tab id registered: ${def.id}`);
     }
 
     def.title = localize(def.title);

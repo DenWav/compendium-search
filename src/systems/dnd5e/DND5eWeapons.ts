@@ -3,6 +3,7 @@ import { exists } from "../../util.js";
 
 export function registerWeapons() {
   SearchDefinition.get.registerSearchTab({
+    id: "weapons",
     title: "CS.dnd5e.weapon.title",
     icon: "fa-solid fa-sword",
     type: "Item",
@@ -36,9 +37,6 @@ export function registerWeapons() {
       if ((doc as any).type !== "weapon") {
         return null;
       }
-      if (!exists(doc.name)) {
-        return null;
-      }
       if (!isWeapon(doc)) {
         return null;
       }
@@ -54,6 +52,7 @@ export function registerWeapons() {
 
 // @ts-ignore
 type Item5e = CompendiumDoc & {
+  name: string;
   system: WeaponData;
 };
 
@@ -73,8 +72,10 @@ interface ItemTypeData {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function isWeapon(value: any): value is Item5e {
   return (
-    exists(value?.system?.description?.value) &&
+    exists(value?.name) &&
+    exists(value.system?.description?.value) &&
     exists(value.system.type?.value) &&
+    typeof value.name &&
     typeof value.system.description.value === "string" &&
     typeof value.system.type.value === "string"
   );

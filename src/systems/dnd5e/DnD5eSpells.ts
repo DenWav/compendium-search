@@ -3,6 +3,7 @@ import { exists } from "../../util.js";
 
 export function registerSpells() {
   SearchDefinition.get.registerSearchTab({
+    id: "spells",
     title: "CS.dnd5e.spells.title",
     icon: "fa-solid fa-wand-magic-sparkles",
     type: "Item",
@@ -48,9 +49,6 @@ export function registerSpells() {
         return null;
       }
 
-      if (!exists(doc.name)) {
-        return null;
-      }
       if (!isSpell(doc)) {
         return null;
       }
@@ -65,6 +63,7 @@ export function registerSpells() {
 }
 
 type Item5e = CompendiumDoc & {
+  name: string;
   system: SpellData;
 };
 
@@ -80,9 +79,11 @@ interface DescriptionData {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function isSpell(value: any): value is Item5e {
   return (
-    exists(value?.system?.description?.value) &&
+    exists(value?.name) &&
+    exists(value.system?.description?.value) &&
     exists(value.system.school) &&
     exists(value.system.level) &&
+    typeof value.name &&
     typeof value.system.description.value === "string" &&
     typeof value.system.school === "string" &&
     typeof value.system.level === "number"

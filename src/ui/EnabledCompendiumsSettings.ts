@@ -1,19 +1,15 @@
-import type { DeepPartial } from "@league-of-foundry-developers/foundry-vtt-types/src/types/utils.mjs";
-import type {
-  ApplicationConfiguration,
-  ApplicationRenderContext,
-  ApplicationRenderOptions,
-} from "@foundry/client-esm/applications/_types.mjs";
+import type {AnyObject, DeepPartial } from "@foundry/types/utils.mjs";
 import { createElement } from "../util";
 
-const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+import ApplicationV2 = foundry.applications.api.ApplicationV2;
+import HandlebarsApplicationMixin = foundry.applications.api.HandlebarsApplicationMixin;
 
-export class EnabledCompendiumsSettings extends HandlebarsApplicationMixin(ApplicationV2) {
+export class EnabledCompendiumsSettings extends HandlebarsApplicationMixin(ApplicationV2<AnyObject>) {
   data: string[];
   tree: CompendiumTree | null;
 
   // noinspection JSUnusedGlobalSymbols
-  static override DEFAULT_OPTIONS = {
+  static override DEFAULT_OPTIONS: DeepPartial<ApplicationV2.Configuration> = {
     id: "compendium-search-enabled-compendiums-app",
     tag: "form",
     form: {
@@ -38,8 +34,9 @@ export class EnabledCompendiumsSettings extends HandlebarsApplicationMixin(Appli
     },
   };
 
-  constructor(options: DeepPartial<ApplicationConfiguration>) {
+  constructor(options: DeepPartial<ApplicationV2.Configuration> = {}) {
     super(options);
+
     if (game.settings && game.packs) {
       this.data = game.settings.get("compendium-search", "enabled-compendiums") as string[];
       this.tree = (game.packs as CompendiumPacks).tree;
@@ -51,8 +48,8 @@ export class EnabledCompendiumsSettings extends HandlebarsApplicationMixin(Appli
 
   // noinspection JSUnusedGlobalSymbols
   protected override _onRender(
-    context: DeepPartial<ApplicationRenderContext>,
-    options: DeepPartial<ApplicationRenderOptions>
+    context: DeepPartial<AnyObject>,
+    options: DeepPartial<ApplicationV2.RenderOptions>
   ) {
     super._onRender(context, options);
 
@@ -69,7 +66,7 @@ export class EnabledCompendiumsSettings extends HandlebarsApplicationMixin(Appli
   }
 
   static async formHandler(
-    _event: SubmitEvent,
+    _event: SubmitEvent | Event,
     form: HTMLFormElement,
     _formData: FormDataExtended
   ) {
@@ -121,6 +118,7 @@ export class EnabledCompendiumsSettings extends HandlebarsApplicationMixin(Appli
         }
 
         listItem.append(folderItem);
+        // @ts-expect-error
         listItem.append(createElement(`<label for="${folderId}">${childTree.folder.name}</label>`));
       } else {
         listItem = document.createElement("li");

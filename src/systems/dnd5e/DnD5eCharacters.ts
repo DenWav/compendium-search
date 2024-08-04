@@ -3,6 +3,7 @@ import { exists } from "../../util.js";
 
 export function registerCharacters() {
   SearchDefinition.get.registerSearchTab({
+    id: "characters",
     title: "CS.dnd5e.characters.title",
     icon: "fa-solid fa-head-side",
     type: "Item",
@@ -36,9 +37,6 @@ export function registerCharacters() {
         return null;
       }
 
-      if (!exists(doc.name)) {
-        return null;
-      }
       if (!isCharacterFeature(doc)) {
         return null;
       }
@@ -54,7 +52,8 @@ export function registerCharacters() {
 const CHARACTER_TYPES = new Set(["class", "subclass", "race", "background"]);
 
 type Item5e = CompendiumDoc & {
-  type: string,
+  name: string;
+  type: string;
   system: FeatureData;
 };
 
@@ -68,7 +67,9 @@ interface DescriptionData {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function isCharacterFeature(value: any): value is Item5e {
   return (
-    exists(value?.system?.description?.value) &&
+    exists(value?.name) &&
+    exists(value.system?.description?.value) &&
+    typeof value.name === "string" &&
     typeof value.system.description.value === "string"
   );
 }

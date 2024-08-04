@@ -3,6 +3,7 @@ import { exists } from "../../util.js";
 
 export function registerEquipment() {
   SearchDefinition.get.registerSearchTab({
+    id: "equipment",
     title: "CS.dnd5e.equip.title",
     icon: "fa-solid fa-hammer",
     type: "Item",
@@ -39,9 +40,6 @@ export function registerEquipment() {
         return null;
       }
 
-      if (!exists(doc.name)) {
-        return null;
-      }
       if (!isEquip(doc)) {
         return null;
       }
@@ -65,7 +63,8 @@ const ITEM_TYPES = new Set(["equipment", "container", "loot", "tool"]);
 const ARMOR_TYPES = new Set(["light", "medium", "heavy"]);
 
 type Item5e = CompendiumDoc & {
-  type: string,
+  name: string;
+  type: string;
   system: EquipmentData;
 };
 
@@ -83,7 +82,9 @@ interface ItemTypeData {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function isEquip(value: any): value is Item5e {
   return (
-    exists(value?.system?.description?.value) &&
+    exists(value?.name) &&
+    exists(value.system?.description?.value) &&
+    typeof value.name &&
     typeof value.system.description.value === "string" &&
     exists(value.system.type?.value) ? typeof value.system.type.value === "string"
       : true

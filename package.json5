@@ -28,7 +28,7 @@
   },
   devDependencies: {
     // branch v12/main
-    '@league-of-foundry-developers/foundry-vtt-types': 'github:League-of-Foundry-Developers/foundry-vtt-types#cfe177b',
+    '@league-of-foundry-developers/foundry-vtt-types': 'github:League-of-Foundry-Developers/foundry-vtt-types#c01abf1',
     '@types/fs-extra': '11.0.4',
     'fs-extra': '11.2.0',
     gts: '5.3.1',
