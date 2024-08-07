@@ -118,7 +118,6 @@ export class EnabledCompendiumsSettings extends HandlebarsApplicationMixin(Appli
         }
 
         listItem.append(folderItem);
-        // @ts-expect-error
         listItem.append(createElement(`<label for="${folderId}">${childTree.folder.name}</label>`));
       } else {
         listItem = document.createElement("li");

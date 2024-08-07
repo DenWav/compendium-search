@@ -152,7 +152,6 @@ export class CompendiumIndex {
       return pack.metadata.label;
     }
     const ancestors = [...pack.folder.ancestors, pack.folder];
-    // @ts-expect-error
     const folderName = ancestors.map(a => a.name).join("/");
     return `${folderName}/${pack.metadata.label}`;
   }
